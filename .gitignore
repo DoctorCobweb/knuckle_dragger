@@ -1,0 +1,3 @@
+node_modules
+*.swp
+escpos-data.bin
