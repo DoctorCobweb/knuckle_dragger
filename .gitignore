@@ -1,3 +1,4 @@
 node_modules
 *.swp
-escpos-data.bin
+escpos-data-log.bin
+escpos-single-order.bin
