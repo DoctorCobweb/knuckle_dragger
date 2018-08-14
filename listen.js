@@ -19,6 +19,7 @@ MAX_BUFFER_SIZE = 2048;
 //
 // this creates a buffer containing [0x1d, 0x56, 0x00]
 const PAPER_CUT_OP_BUFFER = Buffer.from([29,86,00])  
+// console.log('paper cut op length: ', PAPER_CUT_OP_BUFFER.length);
 
 port.on('error', function (err) {
     console.log('ERROR: ', err.message);
@@ -49,18 +50,27 @@ port.on('data', function (data) {
 
         if (checkForCutOperator(myBuffer)) {
             cut_location = myBuffer.indexOf(PAPER_CUT_OP_BUFFER);
-            const op_endpt = cut_location + PAPER_CUT_OP_BUFFER.length;
-            saveBufferToFile(myBuffer.slice(0, op_endpt));
+
+            // this tripped me up: the cut_location is 1 element of the
+            // length of the PAPER_CUT_OP_BUFFER => must subtract 1 to
+            // get correct location of op_endpt.
+            const op_endpt = cut_location + (PAPER_CUT_OP_BUFFER.length - 1);
+            saveBufferToFile(myBuffer.slice(0, op_endpt + 1));
 
             console.log('found a paper cut op...'.green);
             console.log('cut_location: '
                         , cut_location
+                        , 'op_endpt: '
+                        , op_endpt
                         , ' myBuffer.length: '
                         , myBuffer.length)
 
             if (checkForExtraBytes(myBuffer, op_endpt)) {
                 // keep the extra bytes
-                myBuffer = myBuffer.slice(op_endpt, myBuffer.length);
+                var tempBuffer = Buffer.alloc(0);
+                myBuffer.copy(tempBuffer, op_endpt + 1, myBuffer.length)
+                myBuffer = Buffer.alloc(0);
+                myBuffer = tempBuffer;
             } else {
                 // no extra bytes. should be safe to reset buff to blank
                 myBuffer = Buffer.alloc(0);
