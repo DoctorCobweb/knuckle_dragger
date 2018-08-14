@@ -18,6 +18,7 @@ to 'npm install' on Linux i had to downgrade node versions (from 10.6.0 to 10.1)
    `npm install`
 
 **MacOS**
+
 works fine with node 10.6.0.
 1. `npm install`
 
