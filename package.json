@@ -1,0 +1,25 @@
+{
+  "name": "usb-to-serial-converter-test",
+  "version": "1.0.0",
+  "description": "listen for data coming (node listen.js) in and parse it manually (node parser.js).",
+  "main": "listen.js",
+  "dependencies": {
+    "lodash": "^4.17.10",
+    "npos": "^0.1.19",
+    "serialport": "^6.2.2"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DoctorCobweb/knuckle_dragger.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/DoctorCobweb/knuckle_dragger/issues"
+  },
+  "homepage": "https://github.com/DoctorCobweb/knuckle_dragger#readme"
+}
