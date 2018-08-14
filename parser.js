@@ -33,6 +33,8 @@ function orderParser (fileName) {
         );
       });
 
+      // console.log(cleanedData_1);
+
       var cleanedData_2 = _.map(cleanedData_1, (o) => {
         var temp;
         if (_.last(o) === '\n') {

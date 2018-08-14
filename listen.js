@@ -35,10 +35,11 @@ port.on('open', function (err) {
 port.on('data', function (data) {
     //console.log('DATA: ', data);
     //console.log('DATA: ', data.toString('utf8'));
-    //console.log('myBuffer.length: ', myBuffer.length);
     //console.log(myBuffer);
+    // console.log('myBuffer.length: ', myBuffer.length);
 
     myBuffer = Buffer.concat([myBuffer, data])
+
 
     if (myBuffer.length >= MAX_BUFFER_SIZE) {
         //prepare to save buffer to file, but first check to see if
@@ -67,10 +68,11 @@ port.on('data', function (data) {
 
             if (checkForExtraBytes(myBuffer, op_endpt)) {
                 // keep the extra bytes
-                var tempBuffer = Buffer.alloc(0);
-                myBuffer.copy(tempBuffer, op_endpt + 1, myBuffer.length)
-                myBuffer = Buffer.alloc(0);
-                myBuffer = tempBuffer;
+                // var tempBuffer = Buffer.alloc(0);
+                // myBuffer.copy(tempBuffer, op_endpt, myBuffer.length)
+                // myBuffer = Buffer.alloc(0);
+                // myBuffer = tempBuffer;
+                myBuffer = myBuffer.slice(op_endpt + 1, myBuffer.length);
             } else {
                 // no extra bytes. should be safe to reset buff to blank
                 myBuffer = Buffer.alloc(0);
@@ -92,9 +94,8 @@ function checkForExtraBytes(buff, op_endpt) {
     //may have additional bytes on end after op_endpt from a new order.
     // => if so don't thow them away! make these bytes the start of next order.
     if (buff.length > op_endpt) {
-        console.log('WARNING:'.red);
-        console.log('myBuffer contains extra bytes from new order, after cut op'.red);
-        console.log('...not throwing them away => add to start of new buffer!'.red)
+        console.log('myBuffer contains extra bytes from new order, after cut op'.cyan);
+        console.log('...not throwing them away => add to start of new buffer!'.cyan)
         return true;
     } else {
         //no extra bytes after op_endpt
