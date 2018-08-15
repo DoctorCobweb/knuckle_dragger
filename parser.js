@@ -15,9 +15,10 @@ var DOCKET_START_FIELDS = [
   "BOTTLESHOP",
 ];
 
-// orderParser(ESCPOS_DATA_LOG);
+// parseOrder(ESCPOS_DATA_LOG);
 
-function orderParser (fileName) {
+
+function parseOrder (fileName) {
   var buffer = fs.readFileSync(fileName);
 
   parser.parse(buffer).then(function(ast) {
@@ -86,7 +87,6 @@ function orderParser (fileName) {
   }).catch(err => {
     console.log('ERROR PARSER (parser): '.red, err.message);
   });
-
 }
 
-exports.orderParser = orderParser;
+exports.parseOrder = parseOrder;

@@ -26,3 +26,35 @@ works fine with node 10.6.0.
 
 1. comment out the console.log('[textualize] text') etc stuff from npos textualize.js file
 
+
+## NOTES
+
+# Docket headings for each area
+
+**Restaurant Bar**
+ENTREES DINNER
+MAINS DINNER
+CHILDS MENUS - has desserts there. i think there's never entrees or mains for childs here
+CHILDS DESSERT TOPS - things like straw topping
+DESSERT - adult desserts
+ADD MODIFIERS - adult dessert modifiers
+SPECIAL INSTRUCTIONS - call away: kids desserts/mains/etc
+
+**TAB BAR**
+ENTREES DINNER
+BAR MEALS
+CHILDS MENUS - has desserts there. i think there's never entrees or mains for childs here
+CHILDS DESSERT TOPS - things like straw topping
+
+**JUKE BAR**
+BAR MEALS
+??? OTHERS
+
+**GAMING BAR**
+???
+
+**BOTTLESHOP**
+???
+
+**OTHER AREAS ???**
+

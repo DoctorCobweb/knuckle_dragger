@@ -1,15 +1,14 @@
-const SERIAL_PORT = '/dev/tty.usbserial'
+const globalConfig = require('./global-config');
+const SERIAL_PORT = globalConfig['SERIAL_PORT'];
+const MAX_BUFFER_SIZE = globalConfig['SERIAL_PORT'];
+const ESCPOS_DATA_LOG = globalConfig['ESCPOS_DATA_LOG'];
+const ESCPOS_SINGLE_ORDER = globalConfig['ESCPOS_SINGLE_ORDER'];
 const SerialPort = require('serialport');
 const fs = require('fs');
-// const path = require('path');      
 const parser = require('./parser');
 const colors = require('colors');
-
 const port = new SerialPort(SERIAL_PORT);
-var ESCPOS_DATA_LOG = 'escpos-data-log.bin';
-var ESCPOS_SINGLE_ORDER = 'escpos-single-order.bin'
 var myBuffer = Buffer.alloc(0);
-MAX_BUFFER_SIZE = 2048;
 
 // ESC/POS op code for 'select cut mode and cut paper'
 // ASCII GS V m=0 => make a full cut
@@ -137,6 +136,8 @@ function saveBufferToFile (start, end, haveCutOp=false) {
         ' (up and including the cut op), to file: ',
         ESCPOS_SINGLE_ORDER);
 
+      //TODO: use async waterfall for make this all async
+
       //append buff contents to the running single order
       //afterwhich the order should be complete
       fs.appendFileSync(ESCPOS_SINGLE_ORDER, buff);
@@ -147,10 +148,22 @@ function saveBufferToFile (start, end, haveCutOp=false) {
       // write the completed order to the data log
       fs.appendFileSync(ESCPOS_DATA_LOG, singleOrder);
 
+
+      //the complete singel order is now written to file.
+      //=> go off and parse it and then write to local db
+
+
       // TODO: data-mungle further and add to rethinkdb
       //parse the completed single order
       //orderParser is async so returns 'undefined' immediately ?!
-      var parsedOrder = parser.orderParser(ESCPOS_SINGLE_ORDER);
+      var parsedOrder = parser.parseOrder(ESCPOS_SINGLE_ORDER);
+      
+      // WANT
+      // 1. parse the order: escpos binary data to order/JSON
+      // 2. saved parsed order to rethink db collection
+
+
+
       console.log('SINGLE ORDER'.cyan);
       console.log(colors.cyan(parsedOrder)); // always 'undefined'
 
