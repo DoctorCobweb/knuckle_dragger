@@ -1,13 +1,13 @@
-var fs = require('fs');
-var _ = require('lodash');
-var npos = require('npos');
-var parser = npos.parser();
-var colors = require('colors');
-ESCPOS_DATA_LOG = 'escpos-data-log.bin';
-ESCPOS_SINGLE_ORDER = 'escpos-single-order.bin';
+const globalConfig = require('./global-config');
+const ESCPOS_DATA_LOG = globalConfig['ESCPOS_DATA_LOG'];
+const ESCPOS_SINGLE_ORDER = globalConfig['ESCPOS_SINGLE_ORDER'];
+const fs = require('fs');
+const _ = require('lodash');
+const npos = require('npos');
+const parser = npos.parser();
+const colors = require('colors');
 
-
-var DOCKET_START_FIELDS = [
+const DOCKET_START_FIELDS = [
   "RESTAURANT BAR",
   "JUKE BAR",
   "TAB BAR",
@@ -16,7 +16,6 @@ var DOCKET_START_FIELDS = [
 ];
 
 // parseOrder(ESCPOS_DATA_LOG);
-
 
 function parseOrder (fileName) {
   var buffer = fs.readFileSync(fileName);
@@ -34,6 +33,7 @@ function parseOrder (fileName) {
       });
 
       var cleanedData_2 = _.map(cleanedData_1, (s) => {
+
         var temp;
         if (_.last(s) === '\n') {
           temp =  _.slice(s,0, s.length-1)

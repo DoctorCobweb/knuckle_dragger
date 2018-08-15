@@ -1,10 +1,11 @@
+const fs = require('fs');
+const util = require('util');
 const globalConfig = require('./global-config');
 const SERIAL_PORT = globalConfig['SERIAL_PORT'];
 const MAX_BUFFER_SIZE = globalConfig['SERIAL_PORT'];
 const ESCPOS_DATA_LOG = globalConfig['ESCPOS_DATA_LOG'];
 const ESCPOS_SINGLE_ORDER = globalConfig['ESCPOS_SINGLE_ORDER'];
 const SerialPort = require('serialport');
-const fs = require('fs');
 const parser = require('./parser');
 const colors = require('colors');
 const port = new SerialPort(SERIAL_PORT);
@@ -130,14 +131,36 @@ function saveBufferToFile (start, end, haveCutOp=false) {
     try {
       console.log('haveCutOp: ',
         haveCutOp,
-        ', appending the bytes from START= ',
+        ', appending the bytes from START=',
         start,
-        ' to END= ',
+        ' to END=',
+        end,
         ' (up and including the cut op), to file: ',
         ESCPOS_SINGLE_ORDER);
 
-      //TODO: use async waterfall for make this all async
+      const appendFile = util.promisify(fs.appendFile);
+      const readFile = util.promisify(fs.readFile);
+      const truncate = util.promisify(fs.truncate);
+      appendFile(ESCPOS_SINGLE_ORDER,buff)
+        .then(() => {
+          // console.log('promisfy: in first then');
+          return readFile(ESCPOS_SINGLE_ORDER);
+        })
+        .then((results) =>{
+          // console.log('promisfy: in second then');
+          // console.log(results);
+          return appendFile(ESCPOS_DATA_LOG,results);
+        })
+        .then(() => {
+          // console.log('promisfy: in third then');
+          return truncate(ESCPOS_SINGLE_ORDER);
+        })
+        .catch((err) => {
+          console.log('ERROR: '.read, err.message);
+        });
 
+       /*
+      // CHECKING IN OLD SYNC CODE IN CASE OF ROLLBACK
       //append buff contents to the running single order
       //afterwhich the order should be complete
       fs.appendFileSync(ESCPOS_SINGLE_ORDER, buff);
@@ -162,13 +185,12 @@ function saveBufferToFile (start, end, haveCutOp=false) {
       // 1. parse the order: escpos binary data to order/JSON
       // 2. saved parsed order to rethink db collection
 
-
-
       console.log('SINGLE ORDER'.cyan);
       console.log(colors.cyan(parsedOrder)); // always 'undefined'
 
       //clear single file for it to be ready for next stream of bytes from escpos
       fs.truncateSync(ESCPOS_SINGLE_ORDER);
+      */
     } catch (e) {
       console.log('haveCutOp: ', 
         haveCutOp,
