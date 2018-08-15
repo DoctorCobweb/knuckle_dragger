@@ -24,7 +24,5 @@ works fine with node 10.6.0.
 
 ## COMMENTS
 
-yadda
-blah
-
+1. comment out the console.log('[textualize] text') etc stuff from npos textualize.js file
 

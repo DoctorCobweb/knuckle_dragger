@@ -2,6 +2,7 @@ var fs = require('fs');
 var _ = require('lodash');
 var npos = require('npos');
 var parser = npos.parser();
+var colors = require('colors');
 ESCPOS_DATA_LOG = 'escpos-data-log.bin';
 ESCPOS_SINGLE_ORDER = 'escpos-single-order.bin';
 
@@ -79,7 +80,11 @@ function orderParser (fileName) {
 
       //return(JSON.stringify(orderData, null,2));
       return orderData['orders'];
+    }).catch(err => {
+      console.log('ERROR PARSER (textualize): '.red, err.message);
     });
+  }).catch(err => {
+    console.log('ERROR PARSER (parser): '.red, err.message);
   });
 
 }
