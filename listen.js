@@ -2,7 +2,7 @@ const fs = require('fs');
 const util = require('util');
 const globalConfig = require('./global-config');
 const SERIAL_PORT = globalConfig['SERIAL_PORT'];
-const MAX_BUFFER_SIZE = globalConfig['SERIAL_PORT'];
+const MAX_BUFFER_SIZE = globalConfig['MAX_BUFFER_SIZE'];
 const ESCPOS_DATA_LOG = globalConfig['ESCPOS_DATA_LOG'];
 const ESCPOS_SINGLE_ORDER = globalConfig['ESCPOS_SINGLE_ORDER'];
 const SerialPort = require('serialport');
@@ -126,7 +126,10 @@ function checkForCutOperator() {
 }
 
 function saveBufferToFile (start, end, haveCutOp=false) {
-  var buff = getASliceOfBuffer(start,end);
+  // var buff = Buffer.alloc(0);
+  // getASliceOfBuffer(start,end).copy(buff);
+  var buff = getASliceOfBuffer(start,end); 
+  
   if (haveCutOp) {
     try {
       console.log('haveCutOp: ',
@@ -138,6 +141,16 @@ function saveBufferToFile (start, end, haveCutOp=false) {
         ' (up and including the cut op), to file: ',
         ESCPOS_SINGLE_ORDER);
 
+      //COMMENT OUT ASYNC CODE FOR NOW.
+      // => it's easier to reason about sync code
+      // and i'm worried about using a global buffer
+      // to save asynchronously whicls resetting it
+      // elsewhere in the code.
+      //
+      // need to rethink this somemore...(!)
+      //
+      // ...for now it works.
+      /*
       const appendFile = util.promisify(fs.appendFile);
       const readFile = util.promisify(fs.readFile);
       const truncate = util.promisify(fs.truncate);
@@ -158,9 +171,12 @@ function saveBufferToFile (start, end, haveCutOp=false) {
         .catch((err) => {
           console.log('ERROR: '.read, err.message);
         });
+        */
 
-       /*
-      // CHECKING IN OLD SYNC CODE IN CASE OF ROLLBACK
+      //DOESNT WORK
+      // get parse erros with this from textualize func
+      // const singleOrder = Buffer.concat([fs.readFileSync(ESCPOS_SINGLE_ORDER),buff]);
+
       //append buff contents to the running single order
       //afterwhich the order should be complete
       fs.appendFileSync(ESCPOS_SINGLE_ORDER, buff);
@@ -171,26 +187,15 @@ function saveBufferToFile (start, end, haveCutOp=false) {
       // write the completed order to the data log
       fs.appendFileSync(ESCPOS_DATA_LOG, singleOrder);
 
-
-      //the complete singel order is now written to file.
-      //=> go off and parse it and then write to local db
-
-
       // TODO: data-mungle further and add to rethinkdb
       //parse the completed single order
       //orderParser is async so returns 'undefined' immediately ?!
       var parsedOrder = parser.parseOrder(ESCPOS_SINGLE_ORDER);
-      
-      // WANT
-      // 1. parse the order: escpos binary data to order/JSON
-      // 2. saved parsed order to rethink db collection
-
       console.log('SINGLE ORDER'.cyan);
       console.log(colors.cyan(parsedOrder)); // always 'undefined'
 
       //clear single file for it to be ready for next stream of bytes from escpos
       fs.truncateSync(ESCPOS_SINGLE_ORDER);
-      */
     } catch (e) {
       console.log('haveCutOp: ', 
         haveCutOp,
@@ -198,12 +203,19 @@ function saveBufferToFile (start, end, haveCutOp=false) {
         e.message);
     }
   } else {
+    //single order is still not complete but buffer is full. append it to single file
     try {
-      //single order is still not complete. append it to single file
       console.log('haveCutOp: ',
         haveCutOp,
-        ', appending entire buffer to single order file');
+        ', BUFFER FULL: appending entire buffer to single order file');
+
       fs.appendFileSync(ESCPOS_SINGLE_ORDER, buff);
+      /*
+      const appendFile = util.promisify(fs.appendFile);
+      appendFile(ESCPOS_SINGLE_ORDER, buff)
+      .then(() => {})
+      .catch((err) => {console.log('ERROR: ', err.message)});
+      */
     } catch (e) {
       console.log('haveCutOp: ', 
         haveCutOp,
