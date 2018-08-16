@@ -181,18 +181,21 @@ function saveBufferToFile (start, end, haveCutOp=false) {
       //afterwhich the order should be complete
       fs.appendFileSync(ESCPOS_SINGLE_ORDER, buff);
 
+      // parser.parseOrder(ESCPOS_SINGLE_ORDER);
+
       //read in the completed single order
       var singleOrder = fs.readFileSync(ESCPOS_SINGLE_ORDER);
+
+      //--------------------------------------------------
+      // HANDOFF TIME: this is the major task of listen.js;
+      //--------------------------------------------------
+      // to hand a single order's worth of bytes to our parser
+      parser.parseSingleOrder(singleOrder);
      
+      // make a KEEPSAFE of all single orders
       // write the completed order to the data log
       fs.appendFileSync(ESCPOS_DATA_LOG, singleOrder);
 
-      // TODO: data-mungle further and add to rethinkdb
-      //parse the completed single order
-      //orderParser is async so returns 'undefined' immediately ?!
-      var parsedOrder = parser.parseOrder(ESCPOS_SINGLE_ORDER);
-      console.log('SINGLE ORDER'.cyan);
-      console.log(colors.cyan(parsedOrder)); // always 'undefined'
 
       //clear single file for it to be ready for next stream of bytes from escpos
       fs.truncateSync(ESCPOS_SINGLE_ORDER);
