@@ -2,6 +2,7 @@
 
 listen for data coming (node listen.js) in and parse it manually (node parser.js).
 
+
 ## INSTALLATION
 
 **Linux**
@@ -22,13 +23,26 @@ to 'npm install' on Linux i had to downgrade node versions (from 10.6.0 to 10.1)
 works fine with node 10.6.0.
 1. `npm install`
 
-## COMMENTS
+# GOTTCHAS 
 
-1. comment out the console.log('[textualize] text') etc stuff from npos textualize.js file
+1. your need to comment out the console.log('[textualize] text') etc stuff from npos textualize.js file
 
 
-## NOTES
+## RUN
 
+1. make sure rethinkdb is installed on computer and running
+
+  `$> rethinkdb`
+2. in root folder run
+
+  `$> node main.js`
+
+
+
+
+## NOTES // TODOS
+
+----------
 # Docket headings for each area
 
 **Restaurant Bar**
@@ -57,4 +71,13 @@ BAR MEALS
 ???
 
 **OTHER AREAS ???**
+
+-----------
+
+implementation thoughts.
+1. create main.js which starts db/checks its existence (creates it if not present),
+   and start listener process from listen.js
+
+   node main.js ---> starts the whole app 
+
 

@@ -2,3 +2,4 @@ node_modules
 *.swp
 escpos-data-log.bin
 escpos-single-order.bin
+rethinkdb_data
