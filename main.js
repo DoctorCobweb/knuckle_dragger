@@ -88,6 +88,4 @@ function startListeningToSerialPort (conn) {
     .catch(err => {
       if (err) throw err;
     });
-  
-
 }

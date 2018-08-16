@@ -24,7 +24,7 @@ function parseSingleOrder (buffer) {
   nposParser.parse(buffer).then(function(ast) {
     npos.textualize(ast).then(function (results) {
       const data = cleanData(results);
-      console.log(data);
+      // console.log(data);
       dbHandler.insertSingleOrder(data)
     }).catch(err => {
       console.log('ERROR PARSER (textualize): '.red, err.message);
@@ -64,7 +64,7 @@ function parseManyOrders (buffer) {
       var orderData = {};
       const data = cleanData(results);
       orderData['orders'] = splitIntoSingleOrders(data);
-      console.log(JSON.stringify(data, null,2));
+      // console.log(JSON.stringify(data, null,2));
       dbHandler.insertManyOrders(orderData)
     }).catch(err => {
       console.log('ERROR PARSER (textualize): '.red, err.message);

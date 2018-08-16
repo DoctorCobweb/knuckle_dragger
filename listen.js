@@ -235,14 +235,4 @@ function startListening () {
       }
     }
   }
-
-
-
-
-
-
-
 }
-
-
-
