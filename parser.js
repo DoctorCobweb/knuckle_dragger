@@ -122,11 +122,41 @@ function orderToObjectLiteral (order) {
   //2. always have 3 lines in the docket for some of the meta data
   const location = order[0];
   const orderTakenUsing = order[1];
-  const clerk = (order[2]).slice(order[2].indexOf(':')+1);
+  const clerk = (order[2]).slice(order[2].indexOf(':')+2);
   const orderSent = order[3];
   const tableNumber = order[4];
-  const customerName = order[5];
-  const covers = order[6];
+  const customerName = (order[5]).slice(order[5].indexOf(':')+2);
+  const covers = (order[6]).slice(order[6].indexOf(':')+2);
+
+  // put basic templete here for now
+  var template = {
+    area: "",
+    metaData: {},
+    tableNumber: "",
+    customerName: "",
+    covers: "",
+    meals: {
+      "ENTREES DINNER":[],
+      "MAINS DINNER":[],
+      "BAR MEALS":[],
+      "CHILDS MENUS":[],
+      "CHILDS DESSERT TOPS":[],
+      "DESSERT":[],
+      "ADD MODIFIERS":[],
+      "SPECIAL INSTRUCTIONS":[],
+    }
+  };
+
+  template.area = location;
+  template.metaData.orderTakenUsing = orderTakenUsing;
+  template.metaData.clerk = clerk;
+  template.metaData.orderSent = orderSent;
+  template.tableNumber = tableNumber;
+  template.customerName = customerName;
+  template.covers = covers;
+
+  // now need todo more work to get the meals object correctly segmented...
+  // onwards.
 
   const courseFieldsLocations = [];
   _.forEach(DOCKET_COURSE_FIELDS, course => {
@@ -147,31 +177,30 @@ function orderToObjectLiteral (order) {
   });
 
   // only works is each course only appears ONCE on the docket
+  // val is like ['MAINS DINNER', [12] ]
   const trimmedLocations = _.reject(
     _.sortBy(courseFieldsLocations, val => {return val[1][0]})
     , val => {return _.isEmpty(val[1])}
   );
 
   // console.log(order);
-  console.log('courseFieldsLocations: ', courseFieldsLocations );
-  console.log('trimmedLocations: ', trimmedLocations);
+  // console.log('courseFieldsLocations: ', courseFieldsLocations );
+  // console.log('trimmedLocations: ', trimmedLocations);
 
-  var template = {
-    area: "",
-    metaData: {},
-    tableNumber: "",
-    customerName: "",
-    covers: "",
-    meals: {
-      "ENTREES DINNER":[],
-      "MAINS DINNER":[],
-      "BAR MEALS":[],
-      "CHILDS MENUS":[],
-      "CHILDS DESSERT TOPS":[],
-      "DESSERT":[],
-      "ADD MODIFIERS":[],
-      "SPECIAL INSTRUCTIONS":[],
+  // start building out the meal
+  // go thru trimmedLocations and take slices from 'order' variable, for
+  // a given course field
+  _.forEach(trimmedLocations,(val, index, coll) => {
+    const currentCourse = val[0];
+    const currentCourseFieldIndex = val[1][0];
+    var items;
+    if (index === trimmedLocations.length - 1) {
+      items = order.slice(currentCourseFieldIndex + 1, order.length); 
+    } else {
+      const nextCourseFieldIndex = trimmedLocations[index+1][1][0];
+      items = order.slice(currentCourseFieldIndex + 1, nextCourseFieldIndex); 
     }
-  };
-  // dbHandler.insertSingleOrder(data);
+    template.meals[currentCourse] = items;
+  });
+  dbHandler.insertSingleOrder(template);
 }

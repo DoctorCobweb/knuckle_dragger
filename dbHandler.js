@@ -11,14 +11,10 @@ exports.insertManyOrders = insertManyOrders;
 // ------------------------------------------------------------
 
 function insertSingleOrder(order) {
-  // order is an array of strings
-  // ['blah','yadda',....,'foo']
-
   // rethinkdb expects an Object to insert
-  var item = {order:order};
 
   console.log('in insertSingleOrder... order is:');
-  console.log(item);
+  console.log(order);
 
   // everytime insertSingleOrder is called, as new connection
   // is made to the db. good/bad??
@@ -28,7 +24,7 @@ function insertSingleOrder(order) {
   })
   .then(conn => {
     r.db(dbName).table(dbTableName)
-      .insert(item)
+      .insert(order)
       .run(conn)
       .then(results => {
         console.log('SUCCESS: inserted a single order');
