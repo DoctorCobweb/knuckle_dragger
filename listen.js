@@ -198,7 +198,7 @@ function startListening () {
         // HANDOFF TIME: this is the major task of listen.js;
         //--------------------------------------------------
         // to hand a single order's worth of bytes to our parser
-        parser.parseSingleOrder(singleOrder);
+        parser.parseSingleOrderOfBytes(singleOrder);
        
         // make a KEEPSAFE of all single orders
         // write the completed order to the data log

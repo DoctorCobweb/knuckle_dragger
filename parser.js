@@ -14,18 +14,29 @@ const DOCKET_START_FIELDS = [
   "GAMING BAR", // TODO: check this name using actual dockets
   "BOTTLESHOP",
 ];
+const DOCKET_COURSE_FIELDS = [
+  "ENTREES DINNER",
+  "MAINS DINNER",
+  "BAR MEALS",
+  "CHILDS MENUS",
+  "CHILDS DESSERT TOPS",
+  "DESSERT",
+  "ADD MODIFIERS",
+  "SPECIAL INSTRUCTIONS",
+];
 
 // ------------------------------------------------------------
-exports.parseSingleOrder = parseSingleOrder;
-exports.parseManyOrders = parseManyOrders
+exports.parseSingleOrderOfBytes = parseSingleOrderOfBytes;
+exports.parseManyOrdersOfBytes = parseManyOrdersOfBytes;
 // ------------------------------------------------------------
 
-function parseSingleOrder (buffer) {
+function parseSingleOrderOfBytes (buffer) {
   nposParser.parse(buffer).then(function(ast) {
     npos.textualize(ast).then(function (results) {
       const data = cleanData(results);
       // console.log(data);
-      dbHandler.insertSingleOrder(data)
+      // data is an array of strings
+      orderToObjectLiteral(data);
     }).catch(err => {
       console.log('ERROR PARSER (textualize): '.red, err.message);
     });
@@ -58,7 +69,7 @@ function cleanData (results) {
 // moreso for manually checking whether 'escpos-data-log.bin' 
 // contains the correct escpos data ie. it successfully parsers to
 // display many orders.
-function parseManyOrders (buffer) {
+function parseManyOrdersOfBytes (buffer) {
   nposParser.parse(buffer).then(function(ast) {
     npos.textualize(ast).then(function (results) {
       var orderData = {};
@@ -92,11 +103,75 @@ function splitIntoSingleOrders(data) {
   var orders = _.reduce(sortedDocketStartLocations, (acc, val, index, coll) => {
     if (index === coll.length) {
       var order = _.slice(data, sordedDocketStartLocations[index], data.length); 
-      return _concat(acc, [order]);
+
+      //TODO check this return works... it had _concat(acc,[order]); (no period .)
+      return _.concat(acc, [order]);
     } else {
       var order = _.slice(data,sortedDocketStartLocations[index],sortedDocketStartLocations[index + 1]);
       return _.concat(acc, [order]);
     }
   }, []);
   return orders;
+}
+
+function orderToObjectLiteral (order) {
+  //order will be an array of strings
+  //
+  //specs
+  //1. first element of orders will always be the location
+  //2. always have 3 lines in the docket for some of the meta data
+  const location = order[0];
+  const orderTakenUsing = order[1];
+  const clerk = (order[2]).slice(order[2].indexOf(':')+1);
+  const orderSent = order[3];
+  const tableNumber = order[4];
+  const customerName = order[5];
+  const covers = order[6];
+
+  const courseFieldsLocations = [];
+  _.forEach(DOCKET_COURSE_FIELDS, course => {
+    const locations = _.reduce(order, (acc, val, index, coll) => {
+      if (course === val) {
+        return _.concat(acc, [index]);
+      } else {
+        return acc;
+      }
+    }, []);
+
+    //TODO:
+    // ASSUMPTION: each course appears only once on the docket.
+    // => need to look at many printed dockets to see whether assumption is valid.
+    // *** MAYBE EACH COURSE APPEARS MORE THAN ONCE ON THE DOCKET
+    // => locations = [12,56]; (say)
+    courseFieldsLocations.push([course, locations]);
+  });
+
+  // only works is each course only appears ONCE on the docket
+  const trimmedLocations = _.reject(
+    _.sortBy(courseFieldsLocations, val => {return val[1][0]})
+    , val => {return _.isEmpty(val[1])}
+  );
+
+  // console.log(order);
+  console.log('courseFieldsLocations: ', courseFieldsLocations );
+  console.log('trimmedLocations: ', trimmedLocations);
+
+  var template = {
+    area: "",
+    metaData: {},
+    tableNumber: "",
+    customerName: "",
+    covers: "",
+    meals: {
+      "ENTREES DINNER":[],
+      "MAINS DINNER":[],
+      "BAR MEALS":[],
+      "CHILDS MENUS":[],
+      "CHILDS DESSERT TOPS":[],
+      "DESSERT":[],
+      "ADD MODIFIERS":[],
+      "SPECIAL INSTRUCTIONS":[],
+    }
+  };
+  // dbHandler.insertSingleOrder(data);
 }

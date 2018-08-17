@@ -41,7 +41,7 @@ works fine with node 10.6.0.
 
 ## DOCKET HEADINGS FOR EACH AREA  
 
-**Restaurant Bar**  
+**RESTAURANT BAR**  
 ENTREES DINNER  
 MAINS DINNER  
 CHILDS MENUS - has desserts there. i think there's never entrees or mains for childs here  
@@ -75,8 +75,7 @@ BAR MEALS
 
 
 
-## IMPLEMENTATION THOUGHTS  
+## IMPLEMENTATION THOUGHTS & CONCERNS  
 
-add more ideas
-
+1. what happens if app is start during an order happens to be being sent? will receive the cut operator but the previous bytes wont parse to a correct order. need to notify user that an order was sent in but not converted ==> send it again.  
 

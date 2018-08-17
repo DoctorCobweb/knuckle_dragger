@@ -17,7 +17,7 @@ function insertSingleOrder(order) {
   // rethinkdb expects an Object to insert
   var item = {order:order};
 
-  console.log('heeloo from insertSingleOrder');
+  console.log('in insertSingleOrder... order is:');
   console.log(item);
 
   // everytime insertSingleOrder is called, as new connection
