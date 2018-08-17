@@ -200,7 +200,14 @@ function orderToObjectLiteral (order) {
       const nextCourseFieldIndex = trimmedLocations[index+1][1][0];
       items = order.slice(currentCourseFieldIndex + 1, nextCourseFieldIndex); 
     }
-    template.meals[currentCourse] = items;
+
+    const parsedItems = _.map(items, item => {
+      var strippedItem = item.replace(/[0-9]/g,'').trim();
+      var itemQuantity = item.match(/\d/g).join('');
+      return {quantity: itemQuantity, item: strippedItem};
+    });
+    // template.meals[currentCourse] = items;
+    template.meals[currentCourse] = parsedItems;
   });
   dbHandler.insertSingleOrder(template);
 }
