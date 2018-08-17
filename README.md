@@ -23,7 +23,7 @@ to 'npm install' on Linux i had to downgrade node versions (from 10.6.0 to 10.1)
 works fine with node 10.6.0.
 1. `npm install`
 
-# GOTTCHAS 
+## GOTTCHAS 
 
 1. your need to comment out the console.log('[textualize] text') etc stuff from npos textualize.js file
 
@@ -39,10 +39,7 @@ works fine with node 10.6.0.
 
 
 
-
-## NOTES // TODOS  
-
-### DOCKET HEADINGS FOR EACH AREA  
+## DOCKET HEADINGS FOR EACH AREA  
 
 **Restaurant Bar**  
 ENTREES DINNER  
