@@ -32,18 +32,17 @@ works fine with node 10.6.0.
 
 1. make sure rethinkdb is installed on computer and running
 
-  `$> rethinkdb`
-2. in root folder run
+  `$> rethinkdb`  
+2. in root folder run  
 
-  `$> node main.js`
-
-
+  `$> node main.js`  
 
 
-## NOTES // TODOS
 
-----------
-# Docket headings for each area
+
+## NOTES // TODOS  
+
+### DOCKET HEADINGS FOR EACH AREA  
 
 **Restaurant Bar**  
 ENTREES DINNER  
@@ -79,12 +78,8 @@ BAR MEALS
 
 
 
------------
+## IMPLEMENTATION THOUGHTS  
 
-implementation thoughts.
-1. create main.js which starts db/checks its existence (creates it if not present),
-   and start listener process from listen.js
-
-   node main.js ---> starts the whole app 
+add more ideas
 
 
