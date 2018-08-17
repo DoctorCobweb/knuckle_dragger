@@ -124,7 +124,7 @@ function orderToObjectLiteral (order) {
   const orderTakenUsing = order[1];
   const clerk = (order[2]).slice(order[2].indexOf(':')+2);
   const orderSent = order[3];
-  const tableNumber = order[4];
+  const tableNumber = order[4].split(/\s+/).slice(-1)[0];
   const customerName = (order[5]).slice(order[5].indexOf(':')+2);
   const covers = (order[6]).slice(order[6].indexOf(':')+2);
 
