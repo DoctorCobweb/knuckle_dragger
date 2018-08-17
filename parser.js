@@ -202,11 +202,11 @@ function orderToObjectLiteral (order) {
     }
 
     const parsedItems = _.map(items, item => {
-      var strippedItem = item.replace(/[0-9]/g,'').trim();
-      var itemQuantity = item.match(/\d/g).join('');
-      return {quantity: itemQuantity, item: strippedItem};
+      var splitItem = item.split(/\s+/); // ["3","porterhouse","200"]
+      var itemQuantity = splitItem[0];
+      var itemName = splitItem.slice(1,splitItem.length).join(' ');
+      return {quantity: itemQuantity, item: itemName};
     });
-    // template.meals[currentCourse] = items;
     template.meals[currentCourse] = parsedItems;
   });
   dbHandler.insertSingleOrder(template);
