@@ -1,3 +1,6 @@
+// TODO:
+// 1. fix parsing extra info for items
+
 const globalConfig = require('./global-config');
 const ESCPOS_DATA_LOG = globalConfig['ESCPOS_DATA_LOG'];
 const ESCPOS_SINGLE_ORDER = globalConfig['ESCPOS_SINGLE_ORDER'];
@@ -28,14 +31,12 @@ const DOCKET_COURSE_FIELDS = [
 
 // ------------------------------------------------------------
 exports.parseSingleOrderOfBytes = parseSingleOrderOfBytes;
-exports.parseManyOrdersOfBytes = parseManyOrdersOfBytes;
 // ------------------------------------------------------------
 
 function parseSingleOrderOfBytes (buffer) {
   nposParser.parse(buffer).then(function(ast) {
     npos.textualize(ast).then(function (results) {
-      const data = cleanData(results);
-      // console.log(data);
+      const data = sanitize(results);
       // data is an array of strings
       orderToObjectLiteral(data);
     }).catch(err => {
@@ -46,6 +47,19 @@ function parseSingleOrderOfBytes (buffer) {
   });
 }
 
+function sanitize(results) {
+  let data = _.slice(results);
+  data = _.map(data, line => {
+    return line.split('\n');
+  });
+  data = _.flattenDeep(data);
+  data = _.reject(data, val => {
+    return val === '';
+  });
+  return data;
+}
+
+/*
 function cleanData (results) {
   // create a copy of results array
   var data = _.slice(results);
@@ -55,17 +69,19 @@ function cleanData (results) {
     );
   });
   var cleanedData_2 = _.map(cleanedData_1, (s) => {
-    var temp;
+    var tempp;
     if (_.last(s) === '\n') {
-      temp =  _.slice(s,0, s.length-1)
+      tempp =  _.slice(s,0, s.length-1)
     } else {
-      temp = s;
+      tempp = s;
     }
-    return temp.join("").toUpperCase();
+    return tempp.join("").toUpperCase();
   });
   return cleanedData_2;
 }
+*/
 
+/*
 // not really used at this stage. 
 // moreso for manually checking whether 'escpos-data-log.bin' 
 // contains the correct escpos data ie. it successfully parsers to
@@ -74,9 +90,8 @@ function parseManyOrdersOfBytes (buffer) {
   nposParser.parse(buffer).then(function(ast) {
     npos.textualize(ast).then(function (results) {
       var orderData = {};
-      const data = cleanData(results);
+      const data = sanitize(results);
       orderData['orders'] = splitIntoSingleOrders(data);
-      // console.log(JSON.stringify(data, null,2));
       dbHandler.insertManyOrders(orderData)
     }).catch(err => {
       console.log('ERROR PARSER (textualize): '.red, err.message);
@@ -85,6 +100,7 @@ function parseManyOrdersOfBytes (buffer) {
     console.log('ERROR PARSER (parser): '.red, err.message);
   });
 }
+*/
 
 function splitIntoSingleOrders(data) {
   var docketStartLocations = [];
@@ -217,7 +233,7 @@ function orderToObjectLiteral (order) {
 
   var extraContent = handleExtraVariableContent(variableContent);
 
-  var tableNumber;
+  var tableNumber = "";
   const vTableNumber = _.find(variableContent, line => {
     const lineUpper = line.toUpperCase();
     return (lineUpper.includes("TABLE NO") || lineUpper.includes("ORDER NUMBER"));
@@ -229,7 +245,7 @@ function orderToObjectLiteral (order) {
     tableNumber = vTableNumber.split(/\s+/).slice(-1)[0];
   }
 
-  var customerName;
+  var customerName = "";
   const vCustomerName = _.find(variableContent, line => {
     const nameUpper = line.toUpperCase();
     return nameUpper.includes("NAME:");
@@ -239,7 +255,7 @@ function orderToObjectLiteral (order) {
     customerName = vCustomerName.slice(vCustomerName.indexOf(':') + 2);
   }
 
-  var covers;
+  var covers = "";
   const vCovers = _.find(variableContent, line => {
     const coversUpper = line.toUpperCase();
     return coversUpper.includes("COVERS:");
@@ -307,7 +323,7 @@ function handleExtraVariableContent(variableContent) {
   });
 
   if (_.isEmpty(extraContent)) {
-    extraContent = '';
+    extraContent = "";
     console.log('no extraContent');
   } else {
     extraContent = extraContent.join(' ');
