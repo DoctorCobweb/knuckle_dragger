@@ -148,6 +148,9 @@ function orderToObjectLiteral (order) {
   // where val is like ['MAINS DINNER', [12] ]
   // ==> 12 is the index of MAINS DINNER in 'order' variable.
   const trimmedLocations = getAllCourseFieldsLocations(order);
+
+  // we use the firstCourseField as a way to identify any variable content on the
+  // docket. see below for details
   var firstCourseField;
   if (trimmedLocations.length > 0) {
     firstCourseField = trimmedLocations[0][1][0];
@@ -208,10 +211,15 @@ function orderToObjectLiteral (order) {
   template.customerName = customerName;
   template.covers = covers;
 
+
+  // WIP
+  const menutItemIdxs = menuItemIdxs(order, trimmedLocations);
+  console.log(colors.blue(menuItemIdxs));
+
   // start building out the actual meal contents.
   // go thru trimmedLocations and take slices from 'order' variable, for
   // a given course field
-  const meals = buildOutMeals(order, trimmedLocations);
+  const meals = buildOutMeals(order, trimmedLocations, menuItemIdxs);
   template.meals = meals;
   dbHandler.insertSingleOrder(template);
 }
@@ -266,15 +274,63 @@ function handleExtraVariableContent(variableContent) {
   return extraContent;
 }
 
+function menuItemIdxs(order, trimmedLocations) {
+  const firstCourseIdx = trimmedLocations[0][1][0];
+
+  // copy and use only the part of the order we're interested in here.
+  // that's from first course name to end of order.
+  let orderCopy = order.slice(firstCourseIdx, order.length);
+
+  orderCopy = _.map(orderCopy, line => {
+      const splitItem = line.split(/\s+/);
+      if (isNaN(parseInt(splitItem[0]))) {
+        // item is like "add gravy" or "--------------"
+        // sometimes you dont get a number at start of string
+        // this affects how we also extract itemName
+        //console.log(colors.red(item));
+        //itemName = splitItem.slice(0,splitItem.length).join(' ');
+        return splitItem.join(' ');
+      } else {
+        // item is like "3 porterhouse 200"
+        // quantity number is first item
+        // quantity name is from element 1 till end
+        return splitItem.slice(1,splitItem.length).join(' ');
+      }
+  });
+
+  // use menuItems in the form a set (fast extistence operator) to find where menu items
+  // are located.
+  const menuItemsSet = new Set(menuItems);
+  const menuItemIdxs = _.reduce(orderCopy, (acc, line, index, coll) => {
+    // see if line is a menu item by checking if it's in menuItems
+    // if it is, then put (index + firstCourseIndex) into acc
+    // else, just return acc
+    if (menuItemsSet.has(line)) {
+      return _.concat(acc, [index + firstCourseIdx]);
+    } else {
+      return acc;
+    }
+  }, []);
+  return menuItemIdxs;
+}
+
 // TODO: handle per item specific requests, the SUBLINES
 // LINE 1:    "3    PORTERHOUSE 200
 // SUBLINE 1: "M/R, jus, sal only"
 // SUBLINE 2: "--------------------"
-function buildOutMeals (order, trimmedLocations) {
+function buildOutMeals (order, trimmedLocations, menuItemIdxs) {
+  // where trimeedLocations is like:
+  // [ ['ENTREES DINNER', [9] ],
+  //   ['MAINS DINNER', [12] ],
+  //   ['DESSERTS', [15] ],
+  // ]
+  //   
   var meals = {};
-  _.forEach(trimmedLocations,(val, index, coll) => {
+  _.forEach(trimmedLocations, (val, index, coll) => {
     const currentCourse = val[0];
     const currentCourseFieldIndex = val[1][0];
+
+    // items constains all the lines for a given course, including item info lines
     var items;
     if (index === trimmedLocations.length - 1) {
       items = order.slice(currentCourseFieldIndex + 1, order.length); 
@@ -282,7 +338,7 @@ function buildOutMeals (order, trimmedLocations) {
       const nextCourseFieldIndex = trimmedLocations[index+1][1][0];
       items = order.slice(currentCourseFieldIndex + 1, nextCourseFieldIndex); 
     }
-    const parsedItems = _.map(items, item => {
+    const parsedItems = _.map(items, (item, idx) => {
       // first item is USUALLY a number. but sometimes it's not. careful
       var parsedItem = {};
       var itemQuantity;
@@ -295,7 +351,8 @@ function buildOutMeals (order, trimmedLocations) {
         console.log('WARNING: we have an item with no quantity number at start'.red);
         console.log(colors.red(item));
         itemQuantity = "";
-        itemName = splitItem.slice(0,splitItem.length).join(' ');
+        //itemName = splitItem.slice(0,splitItem.length).join(' ');
+        itemName = splitItem.join(' ');
       } else {
         // item is like "3 porterhouse 200"
         // quantity number is first item
