@@ -2,6 +2,7 @@
 // 1. fix parsing extra info for items
 
 const globalConfig = require('./global-config');
+const menuItems = require('./menuConstants').menuItems;
 const ESCPOS_DATA_LOG = globalConfig['ESCPOS_DATA_LOG'];
 const ESCPOS_SINGLE_ORDER = globalConfig['ESCPOS_SINGLE_ORDER'];
 const fs = require('fs');
@@ -28,6 +29,8 @@ const DOCKET_COURSE_FIELDS = [
   "ADD MODIFIERS",
   "SPECIAL INSTRUCTIONS",
 ];
+
+// console.log(menuItems);
 
 // ------------------------------------------------------------
 exports.parseSingleOrderOfBytes = parseSingleOrderOfBytes;
