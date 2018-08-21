@@ -22,6 +22,7 @@ const DOCKET_START_FIELDS = [
 const DOCKET_COURSE_FIELDS = [
   "ENTREES DINNER",
   "MAINS DINNER",
+  "MAINS LUNCH",
   "BAR MEALS",
   "CHILDS MENUS",
   "CHILDS DESSERT TOPS",
@@ -282,10 +283,26 @@ function buildOutMeals (order, trimmedLocations) {
       items = order.slice(currentCourseFieldIndex + 1, nextCourseFieldIndex); 
     }
     const parsedItems = _.map(items, item => {
-      var splitItem = item.split(/\s+/); // ["3","porterhouse","200"]
-      var itemQuantity = splitItem[0];
-      var itemName = splitItem.slice(1,splitItem.length).join(' ');
+      // first item is USUALLY a number. but sometimes it's not. careful
       var parsedItem = {};
+      var itemQuantity;
+      var itemName;
+      var splitItem = item.split(/\s+/);
+      if (isNaN(parseInt(splitItem[0]))) {
+        // item is like "add gravy"
+        // sometimes you dont get a number at start of string
+        // this affects how we also extract itemName
+        console.log('WARNING: we have an item with no quantity number at start'.red);
+        console.log(colors.red(item));
+        itemQuantity = "";
+        itemName = splitItem.slice(0,splitItem.length).join(' ');
+      } else {
+        // item is like "3 porterhouse 200"
+        // quantity number is first item
+        // quantity name is from element 1 till end
+        itemQuantity = splitItem[0];
+        itemName = splitItem.slice(1,splitItem.length).join(' ');
+      }
       parsedItem.quantity = itemQuantity;
       parsedItem.item = itemName;
       parsedItem.info = []; 
@@ -329,35 +346,3 @@ function getAllCourseFieldsLocations (order) {
 
   return trimmedLocations;
 }
-
-// ----------------------------------------
-/*
-function splitIntoSingleOrders(data) {
-  var docketStartLocations = [];
-  // find start locations of orders
-  _.forEach(DOCKET_START_FIELDS, (field) => {
-    //console.log(field);
-    for (var i =0; i <= data.length; i++) {
-      // console.log( cleanedData_2[i]);
-      if (data[i] === field) {
-        // console.log(field, 'found start at: ', i);
-        docketStartLocations = _.concat(docketStartLocations, [i]);
-      }
-    }
-  });
-  // _.orderBy with no iteratees arg will sort by ascending order by default
-  var sortedDocketStartLocations = _.orderBy(docketStartLocations);
-  var orders = _.reduce(sortedDocketStartLocations, (acc, val, index, coll) => {
-    if (index === coll.length) {
-      var order = _.slice(data, sordedDocketStartLocations[index], data.length); 
-
-      //TODO check this return works... it had _concat(acc,[order]); (no period .)
-      return _.concat(acc, [order]);
-    } else {
-      var order = _.slice(data,sortedDocketStartLocations[index],sortedDocketStartLocations[index + 1]);
-      return _.concat(acc, [order]);
-    }
-  }, []);
-  return orders;
-}
-*/
