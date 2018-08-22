@@ -61,7 +61,35 @@ function sanitize(results) {
   data = _.reject(data, val => {
     return val === '';
   });
-  return data;
+
+  // the hotel docket template always contains a line of '-----------------' at the end
+  // => it will be prudent of us to remove it now, as later on when it comes to finding
+  // a menu item's special instructions aka 'info'we will rely on '-----------' to 
+  // delineate separation of multiply present infos. 
+  // viz: 
+  //     4     GARLIC BREAD
+  //     1  ex butter
+  //     1  ex cheese
+  //     --------------
+  //     1  no garlic
+  //     1  add tomato relish
+  //     1  no bread
+  //     -------------
+  //     1  no air in bread
+  //     1  add chilli
+  //     1  smile
+  //     3    OYSTERS NAT 1
+  //     ....
+  const lastLineChars = _.uniq(_.last(data));
+  // we want lastLineChars to be ['-']
+  if ( lastLineChars.length === 1 && lastLineChars[0] === '-' ) {
+    // we can be sure that we have a line of '------------' (after any spaces are removed)
+    console.log('REMOVING last line of --------');
+    data = data.slice(0, data.length -1);
+    return data
+  } else {
+    return data;
+  }
 }
 
 
