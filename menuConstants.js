@@ -8,6 +8,7 @@ const menuItems = [
   //normal items
   "AFFOGATO",
   "ARANCINI",
+  "BARRAMUNDI",
   "BEEF BURGER",
   "BEEF SLIDERS",
   "BIRYANI CURRY",
@@ -61,6 +62,7 @@ const menuItems = [
   "LOADED FRIES",
   "MAIN SPECIALS",
   "MARINATED CHIC",
+  "NACHOS",
   "NASI",
   "NO TOPPING",
   "OPEN FOOD",

@@ -41,7 +41,7 @@ function parseSingleOrderOfBytes (buffer) {
   nposParser.parse(buffer).then(function(ast) {
     npos.textualize(ast).then(function (results) {
       const data = sanitize(results);
-      console.log(colors.yellow(data));
+      // console.log(colors.yellow(data));
       // data is an array of strings
       orderToObjectLiteral(data);
     }).catch(err => {
@@ -212,14 +212,12 @@ function orderToObjectLiteral (order) {
   template.covers = covers;
 
 
-  // WIP
-  const menutItemIdxs = menuItemIdxs(order, trimmedLocations);
-  console.log(colors.blue(menuItemIdxs));
+  const _menuItemIdxs = menuItemIdxs(order, trimmedLocations);
 
   // start building out the actual meal contents.
   // go thru trimmedLocations and take slices from 'order' variable, for
   // a given course field
-  const meals = buildOutMeals(order, trimmedLocations, menuItemIdxs);
+  const meals = buildOutMeals(order, trimmedLocations, _menuItemIdxs);
   template.meals = meals;
   dbHandler.insertSingleOrder(template);
 }
@@ -314,11 +312,95 @@ function menuItemIdxs(order, trimmedLocations) {
   return menuItemIdxs;
 }
 
-// TODO: handle per item specific requests, the SUBLINES
-// LINE 1:    "3    PORTERHOUSE 200
-// SUBLINE 1: "M/R, jus, sal only"
-// SUBLINE 2: "--------------------"
-function buildOutMeals (order, trimmedLocations, menuItemIdxs) {
+function buildOutMeals (order, courseLocations, menuItemIdxs) {
+  console.log(colors.blue(courseLocations));
+  console.log(colors.blue(menuItemIdxs));
+  console.log(colors.yellow(order));
+
+  // TODO: implement the extraction of menu item info
+  // - use menuItemIdxs for slice info-array
+  // - then, within each info-array make sure to check for multiple 'infos' 
+  //   delineated with a line of dashes '---------'.
+  //   viz:
+  //      3 CHILDS RICE
+  //      1 ex chilli   | an 'info'
+  //      1 ex chicken  |
+  //      -----------
+  //      1 no egg      | another 'info'
+  //      1 add soy     |
+  //      -----------
+  //      5 NASI
+  //      ....
+  
+  let infoSlices = _.reduce(menuItemIdxs, (acc, val, idx, coll) => {
+    // val is the index of a menu item in orders array
+    
+    if (idx === coll.length - 1) {
+      // at end of menuItemIdxs
+      const start = val+1;
+      const end = order.length;
+      const info = order.slice(start, end);
+      return _.concat(acc, [info]);
+    } else {
+      // not at last element of menuItemIdxs
+      const start = val+1;
+      const end = menuItemIdxs[idx + 1];
+      const info = order.slice(start, end); 
+      return _.concat(acc, [info]);
+    }
+  }, []);
+  console.log(colors.red(infoSlices));
+
+  // sometimes the course name gets swepped up in a menu's info item.
+  // e.g. infoSlices is like:
+  // [ ['1   MED RARE',
+  //    '1   MUSH'],
+  //   ['1   MED RARE',
+  //    '1   MUSH',
+  //     'MAINS DINNER'], <= see this. it shouldnt be in the array. delete element. 
+  //   ...
+  //   ['DESSRT'], <= see this. it shouldn't be in the array. delete element => []
+  //   ['1   EXTRA ICE CREAM',
+  //    '1   EXTRA COLD'],
+  //   ...
+  // ]
+  // we could carefully step thru menuItemIdxs whilst looking to see if we cross into
+  // a new course,
+  // OR
+  // we can simply just accept that this happens and delete any course names from any 
+  // of the menu info array.
+  // let's adopt the latter...
+
+
+  infoSlices = _.map(infoSlices, anInfoArray => {
+    if (_.isEmpty(_.intersection(anInfoArray, DOCKET_COURSE_FIELDS))) {
+      // anInfoArray doesn't contain any course names. dont need to remove anything.
+      return anInfoArray;
+    } else {
+      // there is a course name in our anInfoArray. remove it.
+      const coursesSet = new Set(DOCKET_COURSE_FIELDS);
+
+      // first find all locations of course names.
+      // DONT ASSUME THAT THERE'S ONLY ONE COURSE NAME PRESENT. THERE COULD BE >1.
+      return _.reduce(anInfoArray, (acc, val, idx, coll) => {
+        if (coursesSet.has(val)) {
+          // val is a course name...
+          // need to drop this from anInfoArray.
+          // this amounts to just returning acc 
+          return acc;
+        } else {
+          // val is needed to be kept. it is not a course name
+          // add it to acc
+          return _.concat(acc,[val]);
+        }
+      }, []);
+    }
+  }); 
+  console.log(colors.green(infoSlices));
+}
+
+
+function _buildOutMeals (order, trimmedLocations, menuItemIdxs) {
   // where trimeedLocations is like:
   // [ ['ENTREES DINNER', [9] ],
   //   ['MAINS DINNER', [12] ],
