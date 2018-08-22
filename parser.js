@@ -61,6 +61,9 @@ function sanitize(results) {
   data = _.reject(data, val => {
     return val === '';
   });
+  data = _.map(data, line => {
+    return line.trim();
+  });
 
   // the hotel docket template always contains a line of '-----------------' at the end
   // => it will be prudent of us to remove it now, as later on when it comes to finding
@@ -85,8 +88,7 @@ function sanitize(results) {
   if ( lastLineChars.length === 1 && lastLineChars[0] === '-' ) {
     // we can be sure that we have a line of '------------' (after any spaces are removed)
     console.log('REMOVING last line of --------');
-    data = data.slice(0, data.length -1);
-    return data
+    return _.initial(data);
   } else {
     return data;
   }
@@ -425,6 +427,7 @@ function buildOutMeals (order, courseLocations, menuItemIdxs) {
     }
   }); 
   console.log(colors.green(infoSlices));
+
 }
 
 
