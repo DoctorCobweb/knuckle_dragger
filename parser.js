@@ -379,7 +379,7 @@ function buildOutMeals (order, courseLocations, menuItemIdxs) {
       return _.concat(acc, [info]);
     }
   }, []);
-  console.log(colors.red(infoSlices));
+  // console.log(colors.red(infoSlices));
 
   // sometimes the course name gets swepped up in a menu's info item.
   // e.g. infoSlices is like:
@@ -426,8 +426,37 @@ function buildOutMeals (order, courseLocations, menuItemIdxs) {
       }, []);
     }
   }); 
-  console.log(colors.green(infoSlices));
+  // console.log(colors.green(infoSlices));
 
+  const fixedSlices = _.map(infoSlices, aSlice => {
+    if (_.isEmpty(aSlice)) {
+      return aSlice;
+    } else {
+      const formattedSlice = _.map(aSlice, line => {
+        const lineChars = _.uniq(line);
+        if (lineChars.length === 1 && lineChars[0] === '-') {
+          return '-';
+        } else {
+          return line;
+        }
+      });
+
+      // console.log(colors.yellow(formattedSlice));
+
+      let infos = [];
+      let singleInfo = [];
+      for (let i of formattedSlice) {
+        if (i === '-') {
+          infos.push(singleInfo);
+          singleInfo = [];
+        } else {
+          singleInfo.push(i);
+        }
+      }
+      return infos;
+    }
+  });
+  console.log(colors.green(fixedSlices));
 }
 
 
