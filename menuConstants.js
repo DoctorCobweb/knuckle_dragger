@@ -55,6 +55,7 @@ const menuItems = [
   "GARLIC CHATS",
   "GARDEN SALAD",
   "GARLIC BREAD",
+  "GNOCCHI",
   "HAKE",
   "HANGER 200",
   "HANGER 400",

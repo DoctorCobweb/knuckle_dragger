@@ -432,21 +432,11 @@ function buildOutMeals (order, courseLocations, menuItemIdxs) {
     if (_.isEmpty(aSlice)) {
       return aSlice;
     } else {
-      const formattedSlice = _.map(aSlice, line => {
-        const lineChars = _.uniq(line);
-        if (lineChars.length === 1 && lineChars[0] === '-') {
-          return '-';
-        } else {
-          return line;
-        }
-      });
-
-      // console.log(colors.yellow(formattedSlice));
-
       let infos = [];
       let singleInfo = [];
-      for (let i of formattedSlice) {
-        if (i === '-') {
+      for (let i of aSlice) {
+        const lineChars = _.uniq(i);
+        if (lineChars.length ===1 && lineChars[0] === '-') {
           infos.push(singleInfo);
           singleInfo = [];
         } else {
@@ -456,9 +446,77 @@ function buildOutMeals (order, courseLocations, menuItemIdxs) {
       return infos;
     }
   });
-  console.log(colors.green(fixedSlices));
-}
+  // console.log(colors.green(fixedSlices));
 
+  // fixedSlices and menuItemIdxs should be the same length and correspond 1-for-1,
+  // in order to meals in order
+  let meals = _.map(menuItemIdxs, (itemIdx, idx) => {
+    let meal = {};
+    let mealLine = order[itemIdx];
+    let itemQuantity;
+    let itemName;
+
+    var splitItem = mealLine.split(/\s+/);
+    if (isNaN(parseInt(splitItem[0]))) {
+      // item is like "add gravy"
+      // sometimes you dont get a number at start of string
+      // this affects how we also extract itemName
+      console.log('WARNING: we have an item with no quantity number at start'.red);
+      console.log(colors.red(item));
+      itemQuantity = "";
+      //itemName = splitItem.slice(0,splitItem.length).join(' ');
+      itemName = splitItem.join(' ');
+    } else {
+      // item is like "3 porterhouse 200"
+      // quantity number is first item
+      // quantity name is from element 1 till end
+      itemQuantity = splitItem[0];
+      itemName = splitItem.slice(1,splitItem.length).join(' ');
+    }
+
+    meal.itemName = itemName;
+    meal.itemQuantity = itemQuantity;
+    meal.infos = fixedSlices[idx];
+    meal.idx = itemIdx;
+
+    return meal;
+  });
+  console.log(JSON.stringify(meals,null,2));
+
+  // now assign meals to courses using course indices and meals indices
+
+  //function buildOutMeals (order, courseLocations, menuItemIdxs) {
+  // where courseLocations is like:
+  // [ ['ENTREES DINNER', [9] ],
+  //   ['MAINS DINNER', [12] ],
+  //   ['DESSERTS', [15] ],
+  // ]
+  const ourOrder = _.map(courseLocations, (val, idx) => {
+    const courseName = val[0];
+    const courseIdx = val[1][0];
+
+    if (idx === courseLocations.length - 1) {
+      // last course
+      const coursePartition =  _.partition(meals, meal => {
+        return meal.idx > courseIdx;
+      });
+      // first value is the array of meals for which the predicate is true
+      return {items: coursePartition[0], course: courseName};
+    } else {
+      // start or middle course
+      const coursePartition = _.partition(meals, meal => {
+        const end = courseLocations[idx + 1][1][0];
+        // console.log(courseIdx);
+        // console.log(end);
+        return (courseIdx < meal.idx && meal.idx < end);
+      });
+      // console.log(colors.red(coursePartition));
+      return {items: coursePartition[0], course: courseName};
+    }
+  });
+  console.log(JSON.stringify(ourOrder, null, 2));
+  return ourOrder;
+}
 
 function _buildOutMeals (order, trimmedLocations, menuItemIdxs) {
   // where trimeedLocations is like:
