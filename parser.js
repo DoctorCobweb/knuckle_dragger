@@ -330,7 +330,7 @@ function menuItemIdxs(order, trimmedLocations) {
 
   // TODO: WARNING: IF A MENU ITEM IS PRINTED ON A DOCKET THAT IS *NOT* IN
   //       THE MENU_ITEMS *SET* THEN IT GETS COMPLETELY DROPPED OFF THE DIGITAL 'DOCKET'
-  //       e.g. docket printed GNOCCHI but it didnt show up in db because it GNOCCHI
+  //       e.g. docket printed GNOCCHI but it didnt show up in db because GNOCCHI
   //       wasn't in the menuConstants.js file
   //       !!! FIX !!!
   // use MENU_ITEMS in the form a set (fast extistence operator) to find where menu items
