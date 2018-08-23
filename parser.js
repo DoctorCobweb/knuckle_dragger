@@ -1,16 +1,16 @@
-// TODO:
-// 1. fix parsing extra info for items
-
 const globalConfig = require('./global-config');
-const menuItems = require('./menuConstants').menuItems;
-const ESCPOS_DATA_LOG = globalConfig['ESCPOS_DATA_LOG'];
-const ESCPOS_SINGLE_ORDER = globalConfig['ESCPOS_SINGLE_ORDER'];
+const menuConstants = require('./menuConstants');
+const MENU_ITEMS = menuConstants.menuItems;
+const DOCKET_COURSE_FIELDS = menuConstants.courseFields;
+const DOCKET_START_FIELDS = menuConstants.docketStartFields;
 const fs = require('fs');
 const _ = require('lodash');
 const npos = require('npos');
 const nposParser = npos.parser();
 const colors = require('colors');
 const dbHandler = require('./dbHandler');
+
+/*
 const DOCKET_START_FIELDS = [
   "RESTAURANT BAR",
   "TAB BAR",
@@ -19,6 +19,9 @@ const DOCKET_START_FIELDS = [
   "BOTTLESHOP",
   "SPORTS BAR",
 ];
+*/
+
+/*
 const DOCKET_COURSE_FIELDS = [
   "ENTREES DINNER",
   "MAINS DINNER",
@@ -30,8 +33,7 @@ const DOCKET_COURSE_FIELDS = [
   "ADD MODIFIERS",
   "SPECIAL INSTRUCTIONS",
 ];
-
-// console.log(menuItems);
+*/
 
 // ------------------------------------------------------------
 exports.parseSingleOrderOfBytes = parseSingleOrderOfBytes;
@@ -68,7 +70,8 @@ function sanitize(results) {
   // the hotel docket template always contains a line of '-----------------' at the end
   // => it will be prudent of us to remove it now, as later on when it comes to finding
   // a menu item's special instructions aka 'info'we will rely on '-----------' to 
-  // delineate separation of multiply present infos. 
+  // delineate separation of multiply present infos and we don't want the last '-----'
+  // complicating things.
   // viz: 
   //     4     GARLIC BREAD
   //     1  ex butter
@@ -94,10 +97,9 @@ function sanitize(results) {
   }
 }
 
-
 function orderToObjectLiteral (order) {
-  //order will be an array of strings. but before going further check that the array
-  //has minimal expected content. namely: area, orderTakenUsing, clerk, orderSentAt.
+  // order will be an array of strings. but before going further check that the array
+  // has minimal expected content. namely: area, orderTakenUsing, clerk, orderSentAt.
   // otherwise throw error, for now.
   if (order.length < 4) {
     throw Error('ERROR: order array is below minimal expected length. parse error...');
@@ -241,7 +243,6 @@ function orderToObjectLiteral (order) {
   template.customerName = customerName;
   template.covers = covers;
 
-
   const _menuItemIdxs = menuItemIdxs(order, trimmedLocations);
 
   // start building out the actual meal contents.
@@ -254,10 +255,11 @@ function orderToObjectLiteral (order) {
 
 function handleExtraVariableContent(variableContent) {
   //----------------------------------------
-  // REALLY CRAPPY CODE => it's working but need to refactor it. later
+  // REALLY CRAPPY CODE => it's working, but need to refactor it. later
   //----------------------------------------
-  // this is used to check for super weird extra variable content (pt 5 immediatley
-  // above)
+  // this is used to check for super weird extra variable content 
+  // like (copied from above):
+  // 5. other extra weird info: "PRINT A/C - SARAH @ 19:11"
   const variableContentKeys = [
     "NAME:",
     "TABLE NO",
@@ -326,11 +328,16 @@ function menuItemIdxs(order, trimmedLocations) {
       }
   });
 
-  // use menuItems in the form a set (fast extistence operator) to find where menu items
+  // TODO: WARNING: IF A MENU ITEM IS PRINTED ON A DOCKET THAT IS *NOT* IN
+  //       THE MENU_ITEMS *SET* THEN IT GETS COMPLETELY DROPPED OFF THE DIGITAL 'DOCKET'
+  //       e.g. docket printed GNOCCHI but it didnt show up in db because it GNOCCHI
+  //       wasn't in the menuConstants.js file
+  //       !!! FIX !!!
+  // use MENU_ITEMS in the form a set (fast extistence operator) to find where menu items
   // are located.
-  const menuItemsSet = new Set(menuItems);
+  const menuItemsSet = new Set(MENU_ITEMS);
   const menuItemIdxs = _.reduce(orderCopy, (acc, line, index, coll) => {
-    // see if line is a menu item by checking if it's in menuItems
+    // see if line is a menu item by checking if it's in MENU_ITEMS 
     // if it is, then put (index + firstCourseIndex) into acc
     // else, just return acc
     if (menuItemsSet.has(line)) {
@@ -400,7 +407,6 @@ function buildOutMeals (order, courseLocations, menuItemIdxs) {
   // we can simply just accept that this happens and delete any course names from any 
   // of the menu info array.
   // let's adopt the latter...
-
 
   infoSlices = _.map(infoSlices, anInfoArray => {
     if (_.isEmpty(_.intersection(anInfoArray, DOCKET_COURSE_FIELDS))) {

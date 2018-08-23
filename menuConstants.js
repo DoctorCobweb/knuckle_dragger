@@ -1,5 +1,26 @@
 'use strict';
 
+const docketStartFields = [
+  "RESTAURANT BAR",
+  "TAB BAR",
+  "JUKE BAR",
+  "GAMING BAR",
+  "BOTTLESHOP",
+  "SPORTS BAR",
+];
+
+const courseFields = [
+  "ENTREES DINNER",
+  "MAINS DINNER",
+  "MAINS LUNCH",
+  "BAR MEALS",
+  "CHILDS MENUS",
+  "CHILDS DESSERT TOPS",
+  "DESSERT",
+  "ADD MODIFIERS",
+  "SPECIAL INSTRUCTIONS",
+];
+
 const menuItems = [
    // ANOMALOUS CONTENT ==> this is a worry.
   "for the band",
@@ -28,6 +49,7 @@ const menuItems = [
   "CHILDS BURGER",
   "CHILDS FISH",
   "CHILDS FROG POND",
+  "CHILDS HAMBURGER",
   "CHILDS ICE CREAM",
   "CHILDS MOUSSE",
   "CHILDS PARMI",
@@ -87,6 +109,14 @@ const menuItems = [
   "SALMON SALAD",
   "SCOTCH FILLET",
   "SCHNITZEL",
+  "SEN GARL BREAD",
+  "SENIOR FISH CHIP",
+  "SENIOR MOUSSE",
+  "SENIOR PUDDING",
+  "SENIOR ROAST",
+  "SENIOR SNIT",
+  "SENIOR SOUP",
+  "SENIOR SORBETS",
   "SHARE JUKE ONE",
   "SHARE MEMBER TWO",
   "SOUP OF THE DAY",
@@ -100,8 +130,11 @@ const menuItems = [
   "WEDGES",
   "WHITING",
   "WINTER GREENS",
+  "WRAP"
 ];
 
 // ----------------------------------------
 exports.menuItems = menuItems;
+exports.courseFields = courseFields;
+exports.docketStartFields= docketStartFields;
 // ----------------------------------------
