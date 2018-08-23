@@ -1,6 +1,13 @@
 # IDEAS
 
 ## PARSER FOR DOCKET
+it may be better to construct a proper parser...
+you have some tokens representing what each line represents, and then
+i) pass through the docket data to 'tokenize' it.
+ii) construct an abstract syntax tree (AST) using the tokens.
+
+doing it this way may be clearer and also handle random data lines (RC) better.
+
 
 | PHYSICAL DOCKET                                          |  TOKENIZATION  |
 |----------------------------------------------------------|----------------|  
@@ -34,15 +41,14 @@
 |[...]                                                     |                |
 |--------                                                  |  EOD           |
   
-  
-// PARSER TOKENS  
+## PARSER TOKENS  
 VL = Venue Location  
 MD = Meta-Data  
 TN = Table Number  
-SP = SPace
+SP = SPace  
 CN = Course Name  
 MI = Menu Item  
 II = Item Info  
 IIS = Item Info Separator  
-RC = Random Content
+RC = Random Content  
 EOD = End Of Docket  
