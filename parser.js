@@ -45,6 +45,7 @@ function sanitize(results) {
   // the hotel docket template always contains a line of '-----------------' at the end
   // => it will be prudent of us to remove it now, as later on when it comes to finding
   // a menu item's special instructions aka 'info'we will rely on '-----------' to 
+  //
   // delineate separation of multiply present infos and we don't want the last '-----'
   // complicating things.
   // viz: 
@@ -436,8 +437,8 @@ function buildOutMeals (order, courseLocations, menuItemIdxs) {
       // item is like "add gravy"
       // sometimes you dont get a number at start of string
       // this affects how we also extract itemName
-      console.log('WARNING: we have an item with no quantity number at start'.red);
-      console.log(colors.red(item));
+      console.log('WARNING: we have an item with no quantity number at start:'.red);
+      console.log(colors.red(mealLine));
       itemQuantity = "";
       //itemName = splitItem.slice(0,splitItem.length).join(' ');
       itemName = splitItem.join(' ');
