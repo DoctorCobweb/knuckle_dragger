@@ -3,37 +3,13 @@ const menuConstants = require('./menuConstants');
 const MENU_ITEMS = menuConstants.menuItems;
 const DOCKET_COURSE_FIELDS = menuConstants.courseFields;
 const DOCKET_START_FIELDS = menuConstants.docketStartFields;
+const VARIABLE_CONTENT_KEYS = menuConstants.variableContentKeys;
 const fs = require('fs');
 const _ = require('lodash');
 const npos = require('npos');
 const nposParser = npos.parser();
 const colors = require('colors');
 const dbHandler = require('./dbHandler');
-
-/*
-const DOCKET_START_FIELDS = [
-  "RESTAURANT BAR",
-  "TAB BAR",
-  "JUKE BAR",
-  "GAMING BAR", 
-  "BOTTLESHOP",
-  "SPORTS BAR",
-];
-*/
-
-/*
-const DOCKET_COURSE_FIELDS = [
-  "ENTREES DINNER",
-  "MAINS DINNER",
-  "MAINS LUNCH",
-  "BAR MEALS",
-  "CHILDS MENUS",
-  "CHILDS DESSERT TOPS",
-  "DESSERT",
-  "ADD MODIFIERS",
-  "SPECIAL INSTRUCTIONS",
-];
-*/
 
 // ------------------------------------------------------------
 exports.parseSingleOrderOfBytes = parseSingleOrderOfBytes;
@@ -43,7 +19,6 @@ function parseSingleOrderOfBytes (buffer) {
   nposParser.parse(buffer).then(function(ast) {
     npos.textualize(ast).then(function (results) {
       const data = sanitize(results);
-      // console.log(colors.yellow(data));
       // data is an array of strings
       orderToObjectLiteral(data);
     }).catch(err => {
@@ -260,14 +235,8 @@ function handleExtraVariableContent(variableContent) {
   // this is used to check for super weird extra variable content 
   // like (copied from above):
   // 5. other extra weird info: "PRINT A/C - SARAH @ 19:11"
-  const variableContentKeys = [
-    "NAME:",
-    "TABLE NO",
-    "ORDER NUMBER",
-    "COVERS:",
-  ];
 
-  var standardContentIndices = _.map(variableContentKeys, (key) => {
+  var standardContentIndices = _.map(VARIABLE_CONTENT_KEYS, (key) => {
     var _index;
     const res = _.find(variableContent, (val, index) => {
       _index = index;
@@ -330,7 +299,7 @@ function menuItemIdxs(order, trimmedLocations) {
 
   // TODO: WARNING: IF A MENU ITEM IS PRINTED ON A DOCKET THAT IS *NOT* IN
   //       THE MENU_ITEMS *SET* THEN IT GETS COMPLETELY DROPPED OFF THE DIGITAL 'DOCKET'
-  //       e.g. docket printed GNOCCHI but it didnt show up in db because GNOCCHI
+  //       e.g. docket printed GNOCCHI but it didnt show up in db because it GNOCCHI
   //       wasn't in the menuConstants.js file
   //       !!! FIX !!!
   // use MENU_ITEMS in the form a set (fast extistence operator) to find where menu items
@@ -522,59 +491,6 @@ function buildOutMeals (order, courseLocations, menuItemIdxs) {
   });
   console.log(JSON.stringify(ourOrder, null, 2));
   return ourOrder;
-}
-
-function _buildOutMeals (order, trimmedLocations, menuItemIdxs) {
-  // where trimeedLocations is like:
-  // [ ['ENTREES DINNER', [9] ],
-  //   ['MAINS DINNER', [12] ],
-  //   ['DESSERTS', [15] ],
-  // ]
-  //   
-  var meals = {};
-  _.forEach(trimmedLocations, (val, index, coll) => {
-    const currentCourse = val[0];
-    const currentCourseFieldIndex = val[1][0];
-
-    // items constains all the lines for a given course, including item info lines
-    var items;
-    if (index === trimmedLocations.length - 1) {
-      items = order.slice(currentCourseFieldIndex + 1, order.length); 
-    } else {
-      const nextCourseFieldIndex = trimmedLocations[index+1][1][0];
-      items = order.slice(currentCourseFieldIndex + 1, nextCourseFieldIndex); 
-    }
-    const parsedItems = _.map(items, (item, idx) => {
-      // first item is USUALLY a number. but sometimes it's not. careful
-      var parsedItem = {};
-      var itemQuantity;
-      var itemName;
-      var splitItem = item.split(/\s+/);
-      if (isNaN(parseInt(splitItem[0]))) {
-        // item is like "add gravy"
-        // sometimes you dont get a number at start of string
-        // this affects how we also extract itemName
-        console.log('WARNING: we have an item with no quantity number at start'.red);
-        console.log(colors.red(item));
-        itemQuantity = "";
-        //itemName = splitItem.slice(0,splitItem.length).join(' ');
-        itemName = splitItem.join(' ');
-      } else {
-        // item is like "3 porterhouse 200"
-        // quantity number is first item
-        // quantity name is from element 1 till end
-        itemQuantity = splitItem[0];
-        itemName = splitItem.slice(1,splitItem.length).join(' ');
-      }
-      parsedItem.quantity = itemQuantity;
-      parsedItem.item = itemName;
-      parsedItem.info = []; 
-
-      return parsedItem;
-    });
-    meals[currentCourse] = parsedItems;
-  });
-  return meals;
 }
 
 function getAllCourseFieldsLocations (order) {

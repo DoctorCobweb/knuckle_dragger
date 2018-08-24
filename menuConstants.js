@@ -1,11 +1,17 @@
 'use strict';
 
+const variableContentKeys = [
+  "NAME:",
+  "TABLE NO",
+  "ORDER NUMBER",
+  "COVERS:",
+];
+
 const docketStartFields = [
   "RESTAURANT BAR",
   "TAB BAR",
   "JUKE BAR",
   "GAMING BAR",
-  "BOTTLESHOP",
   "SPORTS BAR",
 ];
 
@@ -43,7 +49,6 @@ const menuItems = [
   "CAULIFLOWER ALM",
   "CHICK RIBS",
   "CHICKEN BURGER",
-  "CIGAR",
   "CHEESE CAKE",
   "CHILDS BOLOG",
   "CHILDS BURGER",
@@ -60,6 +65,7 @@ const menuItems = [
   "CHILLI CALAMARI",
   "CHOCO TOPPING",
   "CHURROS",
+  "CIGAR",
   "CREME CARAMEL",
   "CRISPY CHIPS",
   "CRUMBED PRAWNS",
@@ -92,6 +98,7 @@ const menuItems = [
   "OYSTERS KIL 1",
   "OYSTERS NAT 1",
   "PAPPADELLE LAMB",
+  "PAPPARDELL LAMB",
   "PARMA",
   "PARMIGIANA",
   "POPCORN CHICK",
@@ -120,6 +127,7 @@ const menuItems = [
   "SHARE JUKE ONE",
   "SHARE MEMBER TWO",
   "SOUP OF THE DAY",
+  "SOUP",
   "SPINKLES ONLY",
   "STICKY DATE PUDD",
   "STRAWB TOPPING",
@@ -136,5 +144,6 @@ const menuItems = [
 // ----------------------------------------
 exports.menuItems = menuItems;
 exports.courseFields = courseFields;
-exports.docketStartFields= docketStartFields;
+exports.docketStartFields = docketStartFields;
+exports.variableContentKeys = variableContentKeys;
 // ----------------------------------------
