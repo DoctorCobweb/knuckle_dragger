@@ -125,6 +125,9 @@ function handleScan(line) {
     },
     ],
     function (err, results) {
+      if (err) {
+        throw Error('ERROR: aysnc.series tokenization had a problem. check.');
+      }
       // results should now be an array of
       // [ {MD: false},
       //   {TN: false},
@@ -138,6 +141,8 @@ function handleScan(line) {
       //   ]
       //
       // the value for which is true represents the token which line is
+
+      // TODO: return the correct token from looking at results array of objects
       return results;
   });
 }
@@ -152,30 +157,37 @@ function tokenMD (line) {
 }
 
 function tokenCN (line) {
+  // TODO
   // CN:  "Course Name",
 }
 
 function tokenMI (line) {
+  // TODO
   // MI:  "Menu Item",
 }
 
 function tokenII (line) {
+  // TODO
   // II:  "Item Info",
 }
 
 function tokenIIS (line) {
+  // TODO
   // IIS: "Item Info Separator",
 }
 
 function tokenRC (line) {
+  // TODO
   // RC:  "Random Content",
 }
 
 function tokenEOD (line) {
+  // TODO
   // EOD: "End Of Docket"
 }
 
 function tokenERR (line) {
+  // TODO
   // ERR: "Error"
   // return "ERR";
 }
