@@ -4,6 +4,7 @@
   "description": "listen for data coming (node listen.js) in and parse it manually (node parser.js).",
   "main": "listen.js",
   "dependencies": {
+    "async": "^2.6.1",
     "colors": "^1.3.1",
     "lodash": "^4.17.10",
     "npos": "^0.1.19",

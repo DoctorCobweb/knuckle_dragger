@@ -15,12 +15,10 @@ doing it this way may be clearer and also handle random data lines (RC) better.
 |taken using                                               |  MD            |
 |staff mem                                                 |  MD            |
 |time                                                      |  MD            |
-|[table num]                                               |  TN            |
+|[table num]                                               |  MD            |
 |[booker name]                                             |  MD            |
 |[covers]                                                  |  MD            |
-|[space]                                                   |  SP            |  
 |[PRINT A/C - YADDA @ 19:11]                               |  MD            |
-|[space]                                                   |  SP            |
 |course name 1                                             |  CN            |
 |[extra variable content: 'add gravy' as a menu item]      |  RC            |
 |menu item                                                 |  MI            |
@@ -29,8 +27,6 @@ doing it this way may be clearer and also handle random data lines (RC) better.
 |[--------]                                                |  IIS           |
 |[...]                                                     |                |
 |[menu item]                                               |  MI            |
-|[space]                                                   |  SP            |
-|[space]                                                   |  SP            |
 |course name 2                                             |  CN            |
 |[extra variable content: 'for band' as a menu item]       |  RC            |
 |menu item                                                 |  MI            |
@@ -44,8 +40,6 @@ doing it this way may be clearer and also handle random data lines (RC) better.
 ## PARSER TOKENS  
 VL = Venue Location  
 MD = Meta-Data  
-TN = Table Number  
-SP = SPace  
 CN = Course Name  
 MI = Menu Item  
 II = Item Info  

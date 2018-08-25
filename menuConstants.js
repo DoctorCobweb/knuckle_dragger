@@ -18,6 +18,15 @@ const docketTemplate = {
   }
 };
 
+// only used in parserV2.js
+const metaContentKeys = [
+  "NAME:",
+  "TABLE NO",
+  "ORDER NUMBER",
+  "COVERS:",
+  "PRINT A/C -", 
+];
+
 const variableContentKeys = [
   "NAME:",
   "TABLE NO",
