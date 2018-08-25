@@ -171,7 +171,7 @@ function orderToObjectLiteral (order) {
     template.metaData.orderTakenUsing = orderTakenUsing;
     template.metaData.clerk = clerk;
     template.metaData.orderSentAt = orderSentAt;
-    template.metaData.extraContent = "EMPTY ORDER: no first course field present";"
+    template.metaData.extraContent = "EMPTY ORDER: no first course field present";
 
     dbHandler.insertSingleOrder(template);
     //throw Error('ERROR: firstCourseField cannot be found in trimmedLocations array');
