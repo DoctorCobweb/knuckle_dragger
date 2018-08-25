@@ -123,6 +123,8 @@ function orderToObjectLiteral (order) {
   // LINE 6: Covers number: MAY NOT BE PRESENT
   // LINE 7: extra weird info: "PRINT A/C - SARAH @ 19:11"
 
+  // TODO: sometimes a docket DOESNT have this even (!!)
+  //       => need to rethink the whole process, if so.
   // C) ALWAYS have AT LEAST ONE docket course field.
   // LINE 8: docket course field (underlined field on phys docket) e.g. ENTREES DINNER
   // LINE 9+: meal item(s)
@@ -163,7 +165,17 @@ function orderToObjectLiteral (order) {
   if (trimmedLocations.length > 0) {
     firstCourseField = trimmedLocations[0][1][0];
   } else {
-    throw Error('ERROR: firstCourseField cannot be found in trimmedLocations array');
+    console.log("ALERT: no firstCourseField was found. We have an empty docket!");
+    //fill out the mandatory content in the template, insert into db, then return.
+    template.area = location;
+    template.metaData.orderTakenUsing = orderTakenUsing;
+    template.metaData.clerk = clerk;
+    template.metaData.orderSentAt = orderSentAt;
+    template.metaData.extraContent = "EMPTY ORDER: no first course field present";"
+
+    dbHandler.insertSingleOrder(template);
+    //throw Error('ERROR: firstCourseField cannot be found in trimmedLocations array');
+    return;
   }
 
   const variableContent = order.slice(variableContentStart, firstCourseField);
@@ -440,7 +452,6 @@ function buildOutMeals (order, courseLocations, menuItemIdxs) {
       console.log('WARNING: we have an item with no quantity number at start:'.red);
       console.log(colors.red(mealLine));
       itemQuantity = "";
-      //itemName = splitItem.slice(0,splitItem.length).join(' ');
       itemName = splitItem.join(' ');
     } else {
       // item is like "3 porterhouse 200"
