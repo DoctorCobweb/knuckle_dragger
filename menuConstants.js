@@ -1,5 +1,23 @@
 'use strict';
 
+const docketTemplate = {
+  area: "",
+  metaData: {},
+  tableNumber: "",
+  customerName: "",
+  covers: "",
+  meals: {
+    "ENTREES DINNER": [],
+    "MAINS DINNER": [],
+    "BAR MEALS": [],
+    "CHILDS MENUS": [],
+    "CHILDS DESSERT TOPS": [],
+    "DESSERT": [],
+    "ADD MODIFIERS": [],
+    "SPECIAL INSTRUCTIONS": [],
+  }
+};
+
 const variableContentKeys = [
   "NAME:",
   "TABLE NO",
@@ -142,6 +160,7 @@ const menuItems = [
 ];
 
 // ----------------------------------------
+exports.docketTemplate = docketTemplate;
 exports.menuItems = menuItems;
 exports.courseFields = courseFields;
 exports.docketStartFields = docketStartFields;

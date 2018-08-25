@@ -3,6 +3,7 @@ const menuConstants = require('./menuConstants');
 const MENU_ITEMS = menuConstants.menuItems;
 const DOCKET_COURSE_FIELDS = menuConstants.courseFields;
 const DOCKET_START_FIELDS = menuConstants.docketStartFields;
+let DOCKET_TEMPLATE = menuConstants.docketTemplate;
 const VARIABLE_CONTENT_KEYS = menuConstants.variableContentKeys;
 const fs = require('fs');
 const _ = require('lodash');
@@ -81,25 +82,6 @@ function orderToObjectLiteral (order) {
     throw Error('ERROR: order array is below minimal expected length. parse error...');
   }
 
-  // put basic templete here for now
-  var template = {
-    area: "",
-    metaData: {},
-    tableNumber: "",
-    customerName: "",
-    covers: "",
-    meals: {
-      "ENTREES DINNER":[],
-      "MAINS DINNER":[],
-      "BAR MEALS":[],
-      "CHILDS MENUS":[],
-      "CHILDS DESSERT TOPS":[],
-      "DESSERT":[],
-      "ADD MODIFIERS":[],
-      "SPECIAL INSTRUCTIONS":[],
-    }
-  };
-
   // ****************************************
   // IMPORTANT: DOCKET SPECIFICATIONS
   // ****************************************
@@ -164,21 +146,21 @@ function orderToObjectLiteral (order) {
   var firstCourseField;
   if (trimmedLocations.length > 0) {
     firstCourseField = trimmedLocations[0][1][0];
-    fillOutVariableContent(order, variableContentStart, trimmedLocations, template);
+    fillOutVariableContent(order, variableContentStart, trimmedLocations);
   } else {
     console.log("ALERT: no firstCourseField was found. We have an empty docket!");
     //fill out the mandatory content in the template, insert into db, then return.
-    template.area = location;
-    template.metaData.orderTakenUsing = orderTakenUsing;
-    template.metaData.clerk = clerk;
-    template.metaData.orderSentAt = orderSentAt;
-    template.metaData.extraContent = "EMPTY ORDER: no first course field present";
-    dbHandler.insertSingleOrder(template);
+    DOCKET_TEMPLATE.area = location;
+    DOCKET_TEMPLATE.metaData.orderTakenUsing = orderTakenUsing;
+    DOCKET_TEMPLATE.metaData.clerk = clerk;
+    DOCKET_TEMPLATE.metaData.orderSentAt = orderSentAt;
+    DOCKET_TEMPLATE.metaData.extraContent = "EMPTY ORDER: no first course field present";
+    dbHandler.insertSingleOrder(DOCKET_TEMPLATE);
     return;
   }
 }
 
-function fillOutVariableContent(order, variableContentStart, trimmedLocations, template) {
+function fillOutVariableContent(order, variableContentStart, trimmedLocations) {
   const variableContent = order.slice(variableContentStart, firstCourseField);
   console.log('variableContent: '.red, variableContent);
    
@@ -223,14 +205,14 @@ function fillOutVariableContent(order, variableContentStart, trimmedLocations, t
     covers = vCovers.slice(vCovers.indexOf(':') + 2);
   }
 
-  template.area = location;
-  template.metaData.orderTakenUsing = orderTakenUsing;
-  template.metaData.clerk = clerk;
-  template.metaData.orderSentAt = orderSentAt;
-  template.metaData.extraContent = extraContent;
-  template.tableNumber = tableNumber;
-  template.customerName = customerName;
-  template.covers = covers;
+  DOCKET_TEMPLATE.area = location;
+  DOCKET_TEMPLATE.metaData.orderTakenUsing = orderTakenUsing;
+  DOCKET_TEMPLATE.metaData.clerk = clerk;
+  DOCKET_TEMPLATE.metaData.orderSentAt = orderSentAt;
+  DOCKET_TEMPLATE.metaData.extraContent = extraContent;
+  DOCKET_TEMPLATE.tableNumber = tableNumber;
+  DOCKET_TEMPLATE.customerName = customerName;
+  DOCKET_TEMPLATE.covers = covers;
 
   const _menuItemIdxs = menuItemIdxs(order, trimmedLocations);
 
@@ -238,9 +220,8 @@ function fillOutVariableContent(order, variableContentStart, trimmedLocations, t
   // go thru trimmedLocations and take slices from 'order' variable, for
   // a given course field
   const meals = buildOutMeals(order, trimmedLocations, _menuItemIdxs);
-  template.meals = meals;
-  dbHandler.insertSingleOrder(template);
-
+  DOCKET_TEMPLATE.meals = meals;
+  dbHandler.insertSingleOrder(DOCKET_TEMPLATE);
 }
 
 function handleExtraVariableContent(variableContent) {
