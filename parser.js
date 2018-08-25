@@ -124,7 +124,7 @@ function orderToObjectLiteral (order) {
   // LINE 7: extra weird info: "PRINT A/C - SARAH @ 19:11"
 
   // TODO: sometimes a docket DOESNT have this even (!!)
-  //       => need to rethink the whole process, if so.
+  //       => need to rethink the whole process, maybe.
   // C) ALWAYS have AT LEAST ONE docket course field.
   // LINE 8: docket course field (underlined field on phys docket) e.g. ENTREES DINNER
   // LINE 9+: meal item(s)
@@ -164,6 +164,7 @@ function orderToObjectLiteral (order) {
   var firstCourseField;
   if (trimmedLocations.length > 0) {
     firstCourseField = trimmedLocations[0][1][0];
+    fillOutVariableContent(order, variableContentStart, trimmedLocations, template);
   } else {
     console.log("ALERT: no firstCourseField was found. We have an empty docket!");
     //fill out the mandatory content in the template, insert into db, then return.
@@ -172,12 +173,12 @@ function orderToObjectLiteral (order) {
     template.metaData.clerk = clerk;
     template.metaData.orderSentAt = orderSentAt;
     template.metaData.extraContent = "EMPTY ORDER: no first course field present";
-
     dbHandler.insertSingleOrder(template);
-    //throw Error('ERROR: firstCourseField cannot be found in trimmedLocations array');
     return;
   }
+}
 
+function fillOutVariableContent(order, variableContentStart, trimmedLocations, template) {
   const variableContent = order.slice(variableContentStart, firstCourseField);
   console.log('variableContent: '.red, variableContent);
    
@@ -239,6 +240,7 @@ function orderToObjectLiteral (order) {
   const meals = buildOutMeals(order, trimmedLocations, _menuItemIdxs);
   template.meals = meals;
   dbHandler.insertSingleOrder(template);
+
 }
 
 function handleExtraVariableContent(variableContent) {
