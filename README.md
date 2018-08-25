@@ -25,8 +25,9 @@ works fine with node 10.6.0.
 
 ## GOTTCHAS 
 
-1. your need to comment out the console.log('[textualize] text') etc stuff from npos textualize.js file
+1. your need to comment out the console.log('[textualize] text') etc stuff from npos textualize.js file  
 
+2.  in rules.js of npos package, you need to change 'r': 0 to 'r': 1 in the ESC rules array.  failing to do this will crash the parser when using a docket with two colours,  black and red.  
 
 ## RUN
 
