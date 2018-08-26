@@ -54,11 +54,15 @@ const courseFields = [
   "SPECIAL INSTRUCTIONS",
 ];
 
-const menuItems = [
+// not exported at this stage.
+const anonymousContent = [
    // ANOMALOUS CONTENT ==> this is a worry.
   "for the band",
   "add gravy",
+];
 
+
+const menuItems = [
   //normal items
   "AFFOGATO",
   "ARANCINI",

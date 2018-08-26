@@ -1,7 +1,9 @@
+// TODO: write out what each token means in reference to a docket.
+
 const colors = require('colors');
 const _ = require('lodash');
 const npos = require('npos');
-const nposParser = npose.parser();
+const nposParser = npos.parser();
 const mc = require('./menuConstants');
 const async = require('async');
 
@@ -49,7 +51,7 @@ function sanitize(results) {
     return line === '';
   });
   data = _.map(data, line => {
-    return line.trim();
+    return line.trim().toUpperCase();
   });
   return data;
 }
@@ -73,7 +75,6 @@ function tokenizeData(data) {
       // be present on docket (yes, even table number is not present sometimes)
 
       return handleScan();
-    
     }
   });
 
@@ -85,42 +86,50 @@ function handleScan(line) {
   async.series([
     function(callback) {
       const decision = tokenMD();
-      const _obj = {tokens["Meta Data"]: decision};
+      const key = tokens["Meta Data"];
+      const _obj = {key: decision};
       callback(null, _obj);
     },
     function(callback) {
       const decision = tokenCN();
-      const _obj = {tokens["Course Name"]: decision};
+      const key = tokens["Course Name"];
+      const _obj = {key: decision};
       callback(null, _obj);
     },
     function(callback) {
       const decision = tokenMI();
-      const _obj = {tokens["Menu Item"]: decision};
+      const key = tokens["Menu Item"];
+      const _obj = {key: decision};
       callback(null, _obj);
     },
     function(callback) {
       const decision = tokenII();
-      const _obj = {tokens["Item Info"]: decision};
+      const key = tokens["Item Info"];
+      const _obj = {key: decision};
       callback(null, _obj);
     },
     function(callback) {
       const decision = tokenIIS();
-      const _obj = {tokens["Item Info Separator"]: decision};
+      const key = tokens["Item Info Separator"];
+      const _obj = {key: decision};
       callback(null, _obj);
     },
     function(callback) {
       const decision = tokenRC();
-      const _obj = {tokens["Random Content"]: decision};
+      const key = token["Random Content"];
+      const _obj = {key: decision};
       callback(null, _obj);
     },
     function (callback) {
       const decision = tokenEOD();
-      const _obj = {tokens["End Of Docket"]: decision};
+      const key = tokens["End Of Docket"];
+      const _obj = {key: decision};
       callback(null, _obj);
     },
     function (callback) {
       const decision = tokenERR();
-      const _obj = {tokens["Error"]: decision};
+      const key = tokens["Error"];
+      const _obj = {key: decision};
       callback(null, _obj);
     },
     ],
@@ -151,24 +160,65 @@ function tokenVL (line) {
   // VL:  "Venue Location",
   return _.includes(mc.docketStartFields, line);
 }
+
 function tokenMD (line) {
   // MD:  "Meta Data",
-  return _.includes(mc.metaContentKeys);
+  return _.some(mc.metaContentKeys, val => {return line.includes(val)});
 }
 
 function tokenCN (line) {
-  // TODO
   // CN:  "Course Name",
+  return _.some(mc.courseFields, val => {return line.inclues(val)});
+
 }
 
 function tokenMI (line) {
-  // TODO
   // MI:  "Menu Item",
+  // a standard menu item is like:
+  //     "1 NASI"
+  // gotta handle the presence of numbers in the line...we're only after the 
+  // menu item name, not quantity.
+  const splitLine = line.split(/\s+/);
+  if (isNaN(parseInt(splitLine[0]))) {
+    // => first element of splitLine is not able to be parsed to an integer.
+    // => that means it's NOT a number.
+    // the line could be like "SPECIAL INSTRUCTIONS" (which is a course field)
+    // => we should then return false 
+    return false;
+  } else {
+    // we have a candidate for a menu item.
+    // we need to be careful because item info lines
+    // will also have a number as their first element in splitLine.
+    // e.g. menu item will look like splitLine = ["2", "SALMON"]
+    //      a menu item's info will be like splitLine = ["1", "cooked well done"]
+    // now join the item back, disregarding the first element (which is a quantity)
+    const rejoinedItem = splitItem.slice(1,splitItem.length).join(' ');
+
+    // now look to see if it's in the menu items.
+    // if so, then it's a menu item, token === MI
+    // otherwise, it's an item info line, token === II, BUT FOR NOW WE ONLY RETURN
+    // true or false in regards to the presence of a menu item.
+    return _.includes(mc.menuItems, rejoinedItem);
+  }
 }
 
+// TODO: IMPORTANT: if item info line so happens to be equal to an item onf the menu
+//       then it will be picked up as a menu item ????
 function tokenII (line) {
-  // TODO
   // II:  "Item Info",
+  // this function is very similar to tokenMI.
+  const splitLine = line.split(/\s+/);
+  if (isNaN(parseInt(splitLine[0]))) {
+    return false;
+  } else {
+    const rejoinedItem = splitItem.slice(1, splitItem.length).join(' ');
+
+    // NOTICE THE ! in front of _.includes(...) 
+    // => if line starts with a number but is not found in menuItems then assume that
+    //    means it's an item info line.
+    //    item info lines (from inspection of physical dockets) start with a number '1'
+    return !_.includes(mc.menuItems, rejoinedItem);
+  }
 }
 
 function tokenIIS (line) {
