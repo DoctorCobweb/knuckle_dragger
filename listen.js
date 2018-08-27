@@ -7,6 +7,7 @@ const ESCPOS_DATA_LOG = globalConfig['ESCPOS_DATA_LOG'];
 const ESCPOS_SINGLE_ORDER = globalConfig['ESCPOS_SINGLE_ORDER'];
 const SerialPort = require('serialport');
 const parser = require('./parser');
+const parserV2 = require('./parserV2');
 const colors = require('colors');
 var myBuffer = Buffer.alloc(0);
 
@@ -198,7 +199,10 @@ function startListening () {
         // HANDOFF TIME: this is the major task of listen.js;
         //--------------------------------------------------
         // to hand a single order's worth of bytes to our parser
-        parser.parseSingleOrderOfBytes(singleOrder);
+        // parser.parseSingleOrderOfBytes(singleOrder);
+
+        // demo this
+        parserV2.parseSingleOrder(singleOrder);
        
         // make a KEEPSAFE of all single orders
         // write the completed order to the data log

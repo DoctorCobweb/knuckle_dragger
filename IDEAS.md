@@ -35,7 +35,6 @@ doing it this way may be clearer and also handle random data lines (RC) better.
 |[...]                                                     |                | 
 |[menu item]                                               |  MI            |
 |[...]                                                     |                |
-|--------                                                  |  EOD           |
   
 ## PARSER TOKENS  
 VL = Venue Location  
@@ -45,4 +44,3 @@ MI = Menu Item
 II = Item Info  
 IIS = Item Info Separator  
 RC = Random Content  
-EOD = End Of Docket  

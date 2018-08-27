@@ -106,8 +106,8 @@ const menuItems = [
   "DESSERT SPEC",
   "EXTRA ICECREAM",
   "EYE FILLET 250GM",
-  "FELAFEL SMALL",
-  "FELAFEL LARGE",
+  "FALAFEL SMALL",
+  "FALAFEL LARGE",
   "FONDANT",
   "FREEKAH FALAFEL",
   "FRIES",
@@ -174,6 +174,7 @@ const menuItems = [
 
 // ----------------------------------------
 exports.docketTemplate = docketTemplate;
+exports.metaContentKeys = metaContentKeys;
 exports.menuItems = menuItems;
 exports.courseFields = courseFields;
 exports.docketStartFields = docketStartFields;
