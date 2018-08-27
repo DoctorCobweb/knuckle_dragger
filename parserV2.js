@@ -94,10 +94,21 @@ function tokenizeData(data) {
       });
       // console.log('tokenSearch: ', tokenSearch);
       // console.log('truthToken: ',truthToken);
-      // console.log('the token: ', truthToken[0].token);
-      return _.concat(acc, [truthToken[0].token]);
+
+      // IMPORTANT: HOW RANDOM CONTENT IS HANDLED 
+      //
+      // if NO tokens were found for the current line then truthToken will be an empty
+      // array. we need to check for this, and if it's empty we arbitrarily assign that
+      // line with a Random Content token, "RC".
+      // otherwise, the token we want will be the first (& only) element in truthToken
+      if (_.isEmpty(truthToken)) {
+        return _.concat(acc, ["RC"]);
+      } else {
+        return _.concat(acc, [truthToken[0].token]);
+      }
     }
   }, []);
+
   const idxs = _.map(Array(data.length), (val, idx) => {return idx});
   return _.zip(data, tokenizedData, idxs); 
 }
@@ -189,92 +200,4 @@ function isLineAllDashes (line) {
   } else {
     return false;
   }
-}
-
-
-
-
-
-// IMPORTANT:
-// => in series, try to assign line to the following tokens:
-//    1. MD
-//    2. CN
-//    3. MI
-//    4. II
-//    5. IIS
-// then if the line doesnt get assigned one of the above, assign it as Random Content
-function handleScan(line) {
-  async.series([
-    function(callback) {
-      const decision = tokenMD(line);
-      // const key = tokens["Meta Data"];
-      const _obj = {"Meta Data": decision};
-      console.log('tokenMD', _obj);
-      callback(null, _obj);
-    },
-    function(callback) {
-      const decision = tokenCN(line);
-      // const key = tokens["Course Name"];
-      const _obj = {"Course Name": decision};
-      console.log('tokenCN', _obj);
-      callback(null, _obj);
-    },
-    function(callback) {
-      const decision = tokenMI(line);
-      // const key = tokens["Menu Item"];
-      const _obj = {"Menu Item": decision};
-      console.log('tokenMI', _obj);
-      callback(null, _obj);
-    },
-    function(callback) {
-      const decision = tokenII(line);
-      // const key = tokens["Item Info"];
-      const _obj = {"Item Info": decision};
-      console.log('tokenII', _obj);
-      callback(null, _obj);
-    },
-    function(callback) {
-      const decision = tokenIIS(line);
-      // const key = tokens["Item Info Separator"];
-      const _obj = {"Item Info Separator": decision};
-      console.log('tokenIIS', _obj);
-      callback(null, _obj);
-    }],
-    function (err, results) {
-      if (err) {
-        throw Error('ERROR: aysnc.series tokenization had a problem. check.');
-      }
-      // results should now be an array of
-      // [ {MD: false},
-      //   {TN: false},
-      //   {CN: false},
-      //   {MI: true},
-      //   {II: false},
-      //   {IIS: false},
-      //   ]
-      //
-      // the value for which is true represents the token which line is
-
-      const tokens = _.reduce(results, (acc, tokenResult) => {
-        if (Object.values(tokenResult)[0]) {
-          return _.concat(acc, [tokenResult]);
-        } else {
-          return acc;
-        }
-      }, []);
-
-      console.log('tokens: ', tokens);
-
-      // if tokens is empty then assign line as Random Content, RC.
-      // if multiple tokens assigned to one line the throw error. should only find one.
-      // else, return the found token.
-      if (_.isEmpty(tokens)) {
-        return "Random Content";
-      } else if (tokens.length > 1) {
-        throw Error('ERROR: multiple tokens for one line. should only have one'.red);
-      } else {
-        console.log(colors.red(Object.keys(tokens[0])[0]));
-        return Object.keys(tokens[0])[0];
-      }
-  });
 }
