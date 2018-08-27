@@ -7,15 +7,17 @@ const nposParser = npos.parser();
 const mc = require('./menuConstants');
 const async = require('async');
 
-const tokens = {
-  "Venue Location":      "VL",
-  "Meta Data":           "MD", // table num, booking name, covers, "PRINT A/C..."
-  "Course Name":         "CN",
-  "Menu Item":           "MI",
-  "Item Info":           "II",
-  "Item Info Separator": "IIS", // which is '  -------------'
-  "Random Content":      "RC",
-};
+/*
+TOKENS DEFINITION
+  VL = Venue Location
+  MD = Meta Data  e.g. table num, booking name, covers, "PRINT A/C..."
+  CN = Course Name
+  MI = Menu Item
+  II = Item Info
+  IIS = Item Info Separator  => which is '  -------------'
+  RC = Random Content
+*/
+const docketTokens = ['VL','MD','CN','MI','II','IIS','RC'];
 
 exports.parseSingleOrder = parseSingleOrder;
 
@@ -28,6 +30,7 @@ function parseSingleOrder(buffer) {
           let data = sanitize(results);
           const zippedData = tokenizeData(data);
           console.log(colors.blue(zippedData));
+          buildOrder(zippedData);
         })
         .catch(err => {
           console.log('ERROR PARSER (textualize): '.red, err.message);
@@ -62,7 +65,6 @@ function tokenizeData(data) {
 
     if (idx == 0 && tokenVL(line)) {
       // at start of docket
-      // return tokens["Venue Location"];
       return _.concat(acc, ["VL"]);
     } else if (idx > 0 && idx < 4) {
       // every docket is guarenteed to have at least 3 lines of meta data
@@ -110,7 +112,9 @@ function tokenizeData(data) {
   }, []);
 
   const idxs = _.map(Array(data.length), (val, idx) => {return idx});
-  return _.zip(data, tokenizedData, idxs); 
+  return _.zipWith(data, tokenizedData, idxs, (l, t, i) => {
+    return {line:l, token:t, index:i};
+  });
 }
 
 function tokenVL (line) {
@@ -200,4 +204,47 @@ function isLineAllDashes (line) {
   } else {
     return false;
   }
+}
+
+function buildOrder(data) {
+  let location = _.find(data, val => {
+    return val.token === 'VL';
+  });
+  location = location ? location.line : 'NO LOCATION';
+  // console.log(location);
+
+  let metaData = _.filter(data, val => {
+    return val.token === 'MD';
+  });
+  metaData = _.map(metaData, val => {
+    return val.line;
+  });
+  // console.log(metaData);
+
+  let courses = _.filter(data, val => {
+    return val.token === 'CN';
+  });
+  // console.log(courses);
+
+  let itemInfos = _.filter(data, val => {
+    return val.token === 'II';
+  });
+  // console.log(itemInfos);
+
+  let itemInfoSeparators = _.filter(data, val => {
+    return val.token === 'IIS';
+  });
+  // console.log(itemInfoSeparators);
+
+  //TODO: make an object with tokens as keys with their indices locations as vals
+  const blah = _.map(docketTokens, token => {
+    return _.reduce(data, (acc, val) => {
+      if (val.token === token) {
+        return acc[token] ? acc[token].push(val.index) : [val.index];
+      } else {
+        return acc;
+      }
+    }, {});
+  });
+  console.log(blah);
 }
