@@ -207,44 +207,52 @@ function isLineAllDashes (line) {
 }
 
 function buildOrder(data) {
-  let location = _.find(data, val => {
-    return val.token === 'VL';
-  });
-  location = location ? location.line : 'NO LOCATION';
-  // console.log(location);
 
-  let metaData = _.filter(data, val => {
-    return val.token === 'MD';
-  });
-  metaData = _.map(metaData, val => {
-    return val.line;
-  });
-  // console.log(metaData);
+  // make an object with tokens as keys and locations of said token as values
+  const idxs = _.reduce(data, (acc, val) => {
+    if (acc.hasOwnProperty(val.token)) {
+      acc[val.token].push(val.index);
+    } else {
+      acc[val.token] = [val.index];
+    }
+    return acc;
+  }, {});
+  console.log(idxs);
 
-  let courses = _.filter(data, val => {
-    return val.token === 'CN';
-  });
-  // console.log(courses);
+  // get location, there should be only 1 element in VL array
+  const location = _.isEmpty(idxs['VL']) ? "NO LOCATION" : data[idxs['VL'][0]].line;
+  console.log('location: ', location);
 
-  let itemInfos = _.filter(data, val => {
-    return val.token === 'II';
-  });
-  // console.log(itemInfos);
-
-  let itemInfoSeparators = _.filter(data, val => {
-    return val.token === 'IIS';
-  });
-  // console.log(itemInfoSeparators);
-
-  //TODO: make an object with tokens as keys with their indices locations as vals
-  const blah = _.map(docketTokens, token => {
-    return _.reduce(data, (acc, val) => {
-      if (val.token === token) {
-        return acc[token] ? acc[token].push(val.index) : [val.index];
+  // get meta data
+  const metaData = _.reduce(idxs['MD'], (acc, MDIdx, i) => {
+    // first meta data line assumed to be 'device which took the order'
+    if (i === 0) {
+      acc.orderTakenUsing = data[MDIdx].line;
+      return acc;
+    }
+    // second meta data line assumed to be the 'clerk' 
+    if (i === 1) {
+      const clerkLine = data[MDIdx].line;
+      const colon = clerkLine.indexOf(':');
+      acc.clerk = clerkLine.slice(colon + 2);
+      return acc;
+    }
+    // third meta data line assumed to be the order sent time
+    if (i === 2) {
+      acc.orderSentAt = data[MDIdx].line;
+      return acc;
+    }
+    // after the 3rd meta data element we start to get variable content which may or may
+    // not appear on the docket. this includes table number, even.
+    if (i >= 3) {
+      if (acc.hasOwnProperty("variableContent")) {
+        acc.variableContent.push(data[MDIdx].line);
+        return acc;
       } else {
+        acc.variableContent = [data[MDIdx].line];
         return acc;
       }
-    }, {});
-  });
-  console.log(blah);
+    }
+  }, {});
+  console.log('metaData: ', metaData);
 }
