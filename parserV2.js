@@ -6,6 +6,7 @@ const npos = require('npos');
 const nposParser = npos.parser();
 const mc = require('./menuConstants');
 const async = require('async');
+const dbHandler = require('./dbHandler');
 
 /*
 TOKENS DEFINITION
@@ -227,21 +228,18 @@ function buildOrder(data) {
   console.log('metaData: ', metaData);
 
   const meals = handleMenuItemsAndItemInfo(data, idxs);
-  console.log(meals);
 
 
 }
 function handleMenuItemsAndItemInfo(data, idxs) {
-
   // sometimes a docket will be void of MI and II => if so then make it 
   // equal to empty array
   const MI_idxs = idxs['MI'] || [];
   const II_idxs = idxs['II'] || [];
 
-
+  // TRICKY
   let partitioned = [];
   for (let [i, II_idx] of II_idxs.entries()) {
-
     if (i === 0) {
       let _obj = {};
       _obj.itemInfo = [data[II_idx].line];
@@ -259,16 +257,46 @@ function handleMenuItemsAndItemInfo(data, idxs) {
         _obj.itemInfo = [data[II_idx].line];
         _obj.startIdx = II_idx;
         partitioned.push(_obj);
-
         partitioned[partitioned.length - 2].endIdx = II_idxs[i-1];
       }
     }
-
     if (i === II_idxs.length - 1) {
         partitioned[partitioned.length - 1].endIdx = II_idxs[i];
     }
   }
-  return partitioned;
+
+  let MIDelimiters = [];
+  for (let [j, MI_idx] of MI_idxs.entries()) {
+    if ( MI_idx === _.last(MI_idxs)) {
+      MIDelimiters.push([MI_idx, data.length -1]);
+    } else {
+      MIDelimiters.push([MI_idx, MI_idxs[j+1]]);
+    }
+  }
+  // console.log(MIDelimiters);
+  // console.log(partitioned);
+
+
+  // TODO: add meals to the correct course name
+  let meals = [];
+  for (let [k, limits] of MIDelimiters.entries()) {
+    let meal = {};
+    const mealLine = data[limits[0]].line; 
+    const splitItem = mealLine.split(/\s+/);
+    meal.menuItem = splitItem.slice(1).join(' ');
+    meal.quantity = splitItem[0];
+    meal.itemInfo = [];
+    
+    for (let [m, item] of partitioned.entries()) {
+      if (item.startIdx > limits[0] && item.endIdx < limits[1]) {
+        meal.itemInfo.push(item.itemInfo);
+      }
+    }
+    meals.push(meal);
+  }
+  console.log(JSON.stringify(meals,null,2));
+
+  return meals;
 }
 
 function handleMetaData(data, idxs) {
