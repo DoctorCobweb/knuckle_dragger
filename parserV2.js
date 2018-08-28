@@ -226,6 +226,49 @@ function buildOrder(data) {
   const metaData = handleMetaData(data, idxs);
   console.log('metaData: ', metaData);
 
+  const meals = handleMenuItemsAndItemInfo(data, idxs);
+  console.log(meals);
+
+
+}
+function handleMenuItemsAndItemInfo(data, idxs) {
+
+  // sometimes a docket will be void of MI and II => if so then make it 
+  // equal to empty array
+  const MI_idxs = idxs['MI'] || [];
+  const II_idxs = idxs['II'] || [];
+
+
+  let partitioned = [];
+  for (let [i, II_idx] of II_idxs.entries()) {
+
+    if (i === 0) {
+      let _obj = {};
+      _obj.itemInfo = [data[II_idx].line];
+      _obj.startIdx = II_idx;
+      partitioned.push(_obj);
+    } else {
+      if ((II_idx - 1) === II_idxs[i-1]) {
+        // still part of a previous item info
+        // => append to last element of partitionedII
+        partitioned[partitioned.length - 1].itemInfo.push(data[II_idx].line);
+      } else {
+        // new item info
+        // => push a new array onto partionedII
+        let _obj = {};
+        _obj.itemInfo = [data[II_idx].line];
+        _obj.startIdx = II_idx;
+        partitioned.push(_obj);
+
+        partitioned[partitioned.length - 2].endIdx = II_idxs[i-1];
+      }
+    }
+
+    if (i === II_idxs.length - 1) {
+        partitioned[partitioned.length - 1].endIdx = II_idxs[i];
+    }
+  }
+  return partitioned;
 }
 
 function handleMetaData(data, idxs) {
