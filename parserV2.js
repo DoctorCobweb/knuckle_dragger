@@ -223,6 +223,12 @@ function buildOrder(data) {
   const location = _.isEmpty(idxs['VL']) ? "NO LOCATION" : data[idxs['VL'][0]].line;
   console.log('location: ', location);
 
+  const metaData = handleMetaData(data, idxs);
+  console.log('metaData: ', metaData);
+
+}
+
+function handleMetaData(data, idxs) {
   // get meta data
   const metaData = _.reduce(idxs['MD'], (acc, MDIdx, i) => {
     // first meta data line assumed to be 'device which took the order'
@@ -254,5 +260,78 @@ function buildOrder(data) {
       }
     }
   }, {});
-  console.log('metaData: ', metaData);
+
+  // make a deep copy of variable content; we will be mutating it when deleting
+  // elements once a variable like 'covers' etc is found.
+  let variableContent = _.cloneDeep(metaData.variableContent);
+  let extraction = extractFromVariableContent(variableContent);
+  metaData.variableContent = extraction.variableContent;
+
+  for (let key in extraction.extractedVariables) {
+    metaData[key] = extraction.extractedVariables[key]; 
+  }
+
+  return metaData;
+}
+
+function extractFromVariableContent (variableContent) {
+  let extractedVariables = {};
+  let tableNumber = _.reduce(variableContent, (acc, line, index) => {
+    if (line.includes('TABLE NO') || line.includes('ORDER NUMBER')) {
+      acc.line = line;
+      acc.index = index;
+      return acc;
+    } else {
+      return acc;
+    }
+  }, {});
+  if (!_.isEmpty(tableNumber)) {
+    extractedVariables.tableNumber = tableNumber.line.split(/\s+/).slice(-1)[0];
+    variableContent.splice(tableNumber.index,1);
+  } else {
+    extractedVariables.tableNumber = "NO TABLE NUMBER";
+  }
+
+  // find customer name if present
+  let customerName = _.reduce(variableContent, (acc, line, index) => {
+    if (line.includes("NAME:")) {
+      acc.line = line;
+      acc.index = index;
+      return acc;
+    } else {
+      return acc;
+    }
+  }, {});
+  if (!_.isEmpty(customerName)) {
+    const colon = customerName.line.indexOf(':');
+    extractedVariables.customerName = customerName.line.slice(colon + 2);
+    variableContent.splice(customerName.index,1);
+  } else {
+    extractedVariables.customerName = "";
+  }
+
+  // find covers if present
+  let covers = _.reduce(variableContent, (acc, line, index) => {
+    if (line.includes("COVERS:")) {
+      acc.line = line;
+      acc.index = index;
+      return acc;
+    } else {
+      return acc;
+    }
+  }, {});
+  if (!_.isEmpty(covers)) {
+    const colon = covers.line.indexOf(':');
+    extractedVariables.covers = covers.line.slice(colon + 2);
+    variableContent.splice(customerName.index,1);
+  } else {
+    extractedVariables.covers = "";
+  }
+
+  // variableContent may be undefined if all its elements have been extracted. if so,
+  // make it an empty array
+  variableContent = variableContent || [];
+
+  // using ES6 shorthand notation for object with same key name as variable vals
+  return {extractedVariables, variableContent};
 }
