@@ -1,5 +1,3 @@
-// TODO: write out what each token means in reference to a docket.
-
 const colors = require('colors');
 const _ = require('lodash');
 const npos = require('npos');
@@ -7,20 +5,22 @@ const nposParser = npos.parser();
 const mc = require('./menuConstants');
 const async = require('async');
 const dbHandler = require('./dbHandler');
-
-/*
-TOKENS DEFINITION
-  VL = Venue Location
-  MD = Meta Data  e.g. table num, booking name, covers, "PRINT A/C..."
-  CN = Course Name
-  MI = Menu Item
-  II = Item Info
-  IIS = Item Info Separator  => which is '  -------------'
-  RC = Random Content
-*/
 const docketTokens = ['VL','MD','CN','MI','II','IIS','RC'];
 
+// ------------------------------------------------------------------------- //
+//     TOKENS DEFINITION                                                     //
+//     VL = Venue Location                                                   //
+//     MD = Meta Data  e.g. table num, booking name, covers, "PRINT A/C..."  //
+//     CN = Course Name                                                      //
+//     MI = Menu Item                                                        //
+//     II = Item Info                                                        //
+//     IIS = Item Info Separator  => which is '  -------------'              //
+//     RC = Random Content                                                   //
+// ------------------------------------------------------------------------- //
+
+// ------------------------------------------------------------------------- //
 exports.parseSingleOrder = parseSingleOrder;
+// ------------------------------------------------------------------------- //
 
 function parseSingleOrder(buffer) {
   nposParser.parse(buffer)
@@ -91,7 +91,6 @@ function tokenizeData(data) {
         val.outcome = val.f(line);
         return val;
       });
-
 
       const truthToken = _.filter(tokenFuncs, val => {
         return val.outcome;
@@ -209,7 +208,6 @@ function isLineAllDashes (line) {
 }
 
 function buildOrder(data) {
-
   // make an object with tokens as keys and locations of said token as values
   const idxs = _.reduce(data, (acc, val) => {
     if (acc.hasOwnProperty(val.token)) {
@@ -223,19 +221,22 @@ function buildOrder(data) {
   // get location, there should be only 1 element in VL array
   const location = _.isEmpty(idxs['VL']) ? "NO LOCATION" : data[idxs['VL'][0]].line;
   const metaData = handleMetaData(data, idxs);
-  const order = handleMenuItemsAndItemInfo(data, idxs);
+  let meals = handleMenuItemsAndItemInfo(data, idxs);
+
+  let order = {};
+  order.metaData = metaData;
+  order.metaData.location = location;
+  order.meals = meals;
   return order;
 }
 
 function handleMenuItemsAndItemInfo(data, idxs) {
   // better to check for undefined than to not...
+  // sometimes a docket will be void of (say) II 
+  // => if so then make it equal to empty array
   const CN_idxs = idxs['CN'] || []; 
-  // sometimes a docket will be void of MI and II => if so then make it 
-  // equal to empty array
   const MI_idxs = idxs['MI'] || [];
   const II_idxs = idxs['II'] || [];
-
-
 
   const CNDelimiters = getAllCNDelimiterPairs(data, CN_idxs);
   const MIDelimiters = getAllMIDelimiterPairs(data, MI_idxs);
@@ -243,8 +244,8 @@ function handleMenuItemsAndItemInfo(data, idxs) {
   let order = assignMealsToCourses(data, CNDelimiters, meals);
   // console.log("CNDelimiters: ", CNDelimiters);
   // console.log("MIDelimiters: ", MIDelimiters);
-  console.log('order:');
-  console.log(JSON.stringify(order,null,2));
+  // console.log('order:');
+  // console.log(JSON.stringify(order,null,2));
 
   // HANDLE RANDOM CONTENT
   // is there Random Content?? token is RC.
@@ -252,11 +253,39 @@ function handleMenuItemsAndItemInfo(data, idxs) {
   if (_.includes(Object.keys(idxs), 'RC') && !_.isEmpty(idxs['RC'])) {
     console.log(`ATTENTION: order has Random Content at: ${idxs['RC']}`.red);
     let rc = _.map(idxs['RC'], val => {
-      return data[val].line;
+      let _obj = {};
+      // assume RC starts and ends on same like ie. it's a one liner
+      _obj.startIdx = val;
+      _obj.endIdx = val;
+      _obj.name = data[val].line;
+      _obj.info = [];
+      _obj.quantity = 1;
+      return _obj;
     });
-    order['RANDOM CONTENT'] = rc.join(', ');
+    order['RANDOM CONTENT'] = rc;
   }
+  order = removeAllIndicesInOrder(order);
   return order;
+}
+
+function removeAllIndicesInOrder(order) {
+  let orderClone = _.cloneDeep(order);
+  console.log(JSON.stringify(orderClone,null,2));
+  for (let course of Object.keys(orderClone)) {
+    let items = orderClone[course]
+    for (let item of items) {
+      delete item.startIdx;
+      delete item.endIdx;
+      if (!_.isEmpty(item.info)) {
+        for (let info of item.info) {
+          delete info.startIdx;
+          delete info.endIdx;
+        }
+      }
+    }
+  }
+  console.log(JSON.stringify(orderClone,null,2));
+  return orderClone;
 }
 
 function buildMealItems(data, MIDelimiters, II_idxs) {
@@ -317,6 +346,7 @@ function assignMealsToCourses(data, CNDelimiters, meals) {
           continue;
         }
       } else {
+        // IMPORTANT
         // our meal has a non empty item info array. this means we need to first
         // update our meal start and end indices to include info
         const orderedInfos = _.sortBy(meal.info, val => {
@@ -456,7 +486,6 @@ function handleMetaData(data, idxs) {
   for (let key in extraction.extractedVariables) {
     metaData[key] = extraction.extractedVariables[key]; 
   }
-
   return metaData;
 }
 
@@ -471,6 +500,7 @@ function extractFromVariableContent (variableContent) {
       return acc;
     }
   }, {});
+
   if (!_.isEmpty(tableNumber)) {
     extractedVariables.tableNumber = tableNumber.line.split(/\s+/).slice(-1)[0];
     variableContent.splice(tableNumber.index,1);
@@ -488,6 +518,7 @@ function extractFromVariableContent (variableContent) {
       return acc;
     }
   }, {});
+
   if (!_.isEmpty(customerName)) {
     const colon = customerName.line.indexOf(':');
     extractedVariables.customerName = customerName.line.slice(colon + 2);
@@ -506,6 +537,7 @@ function extractFromVariableContent (variableContent) {
       return acc;
     }
   }, {});
+
   if (!_.isEmpty(covers)) {
     const colon = covers.line.indexOf(':');
     extractedVariables.covers = covers.line.slice(colon + 2);
@@ -513,7 +545,6 @@ function extractFromVariableContent (variableContent) {
   } else {
     extractedVariables.covers = "";
   }
-
   // variableContent may be undefined if all its elements have been extracted. if so,
   // make it an empty array
   variableContent = variableContent || [];
