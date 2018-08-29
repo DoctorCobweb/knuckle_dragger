@@ -218,85 +218,190 @@ function buildOrder(data) {
     }
     return acc;
   }, {});
-  console.log(idxs);
+  // console.log(idxs);
 
   // get location, there should be only 1 element in VL array
   const location = _.isEmpty(idxs['VL']) ? "NO LOCATION" : data[idxs['VL'][0]].line;
-  console.log('location: ', location);
+  // console.log('location: ', location);
 
   const metaData = handleMetaData(data, idxs);
-  console.log('metaData: ', metaData);
+  // console.log('metaData: ', metaData);
 
   const meals = handleMenuItemsAndItemInfo(data, idxs);
 
 
 }
 function handleMenuItemsAndItemInfo(data, idxs) {
+  const CN_idxs = idxs['CN'] || []; // better to check than to not...
+
   // sometimes a docket will be void of MI and II => if so then make it 
   // equal to empty array
   const MI_idxs = idxs['MI'] || [];
   const II_idxs = idxs['II'] || [];
 
+  let nonEmptyItemInfos = getNonEmptyItemInfos(data, II_idxs);
+  let CNDelimiters = getAllCNDelimiterPairs(data, CN_idxs);
+  // let CNDelimiters = makeCourseDelimiters(data, CN_idxs);
+  let MIDelimiters = getAllMIDelimiterPairs(data, MI_idxs);
+
+
+  console.log("CNDelimiters: ", CNDelimiters);
+  console.log("MIDelimiters: ", MIDelimiters);
+  // console.log('nonEmptyItemInfos');
+  // console.log(JSON.stringify(nonEmptyItemInfos, null,2));
+  
+  // loop through MIDelimiters to build meals
+  let meals = [];
+  for (let [i, MIDelimiter] of MIDelimiters.entries()) {
+    let meal = {};
+    const mealStart = MIDelimiter[0];
+    const mealEnd = MIDelimiter[1];
+    const mealLine = data[mealStart].line;
+    const mealSplit = mealLine.split(/\s+/);
+    meal.startIdx = mealStart;
+    meal.endIdx = mealEnd;
+    meal.name = mealSplit.slice(1).join(' ');
+    meal.quantity = mealSplit[0];
+    meal.info = [];
+
+    if (mealStart === mealEnd) {
+      // => no item info for meal. we're done with constructing this meal.
+      // push it onto meals and move onto next MIDelimiter pair
+      meals.push(meal);
+      continue;
+    } else {
+      // find all the item infos which have a startIdx > mealStart and 
+      //
+      // endIdx < mealEnd.
+      // then assign these to meal.info and push onto meals array
+      const itemInfos = _.filter(nonEmptyItemInfos, item => {
+        return (item.startIdx > mealStart && item.endIdx < mealEnd);
+      });
+      meal.info = itemInfos;
+
+      meals.push(meal);
+    }
+  }
+  // console.log('meals');
+  // console.log(JSON.stringify(meals,null,2));
+
+  const order = assignMealsToCourses(data, CNDelimiters, meals);
+  return order;
+}
+
+function assignMealsToCourses(data, CNDelimiters, meals) {
+  // assign each meal to a course
+  let order = {};
+  for (let [j, CNDelimiter] of CNDelimiters.entries()) {
+    const courseStart = CNDelimiter[0];
+    const courseEnd = CNDelimiter[1];
+    const courseName = data[courseStart].line;
+    order[courseName] = [];
+    for (let [k, meal] of meals.entries()) {
+      if (_.isEmpty(meal.info)) {
+        if (meal.startIdx > courseStart && meal.endIdx <= courseEnd) {
+          order[courseName].push(meal);
+        } else {
+          continue;
+        }
+      } else {
+        // our meal has a non empty item info array. this means we need to first
+        // update our meal start and end indices to include info
+        const orderedInfos = _.sortBy(meal.info, val => {
+          return val.startIdx;
+        });
+        // console.log('orderedInfos');
+        // console.log(orderedInfos);
+
+        meal.startIdx = _.head(orderedInfos).startIdx;
+        meal.endIdx = _.last(orderedInfos).endIdx
+
+        if (meal.startIdx > courseStart && meal.endIdx < courseEnd) {
+          order[courseName].push(meal);
+        } else {
+          continue;
+        }
+      } 
+    }
+  }
+  console.log('order:');
+  console.log(JSON.stringify(order,null,2));
+
+}
+
+function getNonEmptyItemInfos(data, II_idxs) {
   // TRICKY
-  let partitioned = [];
+  let infos = [];
   for (let [i, II_idx] of II_idxs.entries()) {
     if (i === 0) {
       let _obj = {};
       _obj.itemInfo = [data[II_idx].line];
       _obj.startIdx = II_idx;
-      partitioned.push(_obj);
+      infos.push(_obj);
     } else {
       if ((II_idx - 1) === II_idxs[i-1]) {
         // still part of a previous item info
         // => append to last element of partitionedII
-        partitioned[partitioned.length - 1].itemInfo.push(data[II_idx].line);
+        infos[infos.length - 1].itemInfo.push(data[II_idx].line);
       } else {
         // new item info
         // => push a new array onto partionedII
         let _obj = {};
         _obj.itemInfo = [data[II_idx].line];
         _obj.startIdx = II_idx;
-        partitioned.push(_obj);
-        partitioned[partitioned.length - 2].endIdx = II_idxs[i-1];
+        infos.push(_obj);
+        infos[infos.length - 2].endIdx = II_idxs[i-1];
       }
     }
     if (i === II_idxs.length - 1) {
-        partitioned[partitioned.length - 1].endIdx = II_idxs[i];
+        infos[infos.length - 1].endIdx = II_idxs[i];
     }
   }
+  return infos;
+}
 
-  let MIDelimiters = [];
-  for (let [j, MI_idx] of MI_idxs.entries()) {
-    if ( MI_idx === _.last(MI_idxs)) {
-      MIDelimiters.push([MI_idx, data.length -1]);
+function getAllMIDelimiterPairs(data, idxs) {
+  let delimiters = [];
+  for (let [j, idx] of idxs.entries()) {
+    if ( idx === _.last(idxs)) {
+      delimiters.push([idx, data.length -1]);
     } else {
-      MIDelimiters.push([MI_idx, MI_idxs[j+1]]);
-    }
-  }
-  // console.log(MIDelimiters);
-  // console.log(partitioned);
-
-
-  // TODO: add meals to the correct course name
-  let meals = [];
-  for (let [k, limits] of MIDelimiters.entries()) {
-    let meal = {};
-    const mealLine = data[limits[0]].line; 
-    const splitItem = mealLine.split(/\s+/);
-    meal.menuItem = splitItem.slice(1).join(' ');
-    meal.quantity = splitItem[0];
-    meal.itemInfo = [];
-    
-    for (let [m, item] of partitioned.entries()) {
-      if (item.startIdx > limits[0] && item.endIdx < limits[1]) {
-        meal.itemInfo.push(item.itemInfo);
+      if (_.includes(mc.courseFields, data[idxs[j+1]-1].line) ) {
+        // CARFUL OF COURSE NAMES APPEARING BETWEEN TWO CONSECUTIVE MENU ITEMS
+        // have a course name between this menu item and the next
+        // => need to move back 2 steps from  the next menu item location
+        delimiters.push([idx, idxs[j+1] - 2]);
+      } else {
+        // no course name between this menu item and next one 
+        delimiters.push([idx, idxs[j+1] - 1]);
       }
     }
-    meals.push(meal);
   }
-  console.log(JSON.stringify(meals,null,2));
+  return delimiters;
+}
 
-  return meals;
+function getAllCNDelimiterPairs(data, idxs) {
+  let delimiters = [];
+  for (let [j, idx] of idxs.entries()) {
+    if ( idx === _.last(idxs)) {
+      delimiters.push([idx, data.length -1]);
+    } else {
+      delimiters.push([idx, idxs[j+1]-1]);
+    }
+  }
+  return delimiters;
+}
+
+function makeCourseDelimiters(data, CN_idxs) {
+  let CNDelimiters = [];
+  for (let [n, CN_idx] of CN_idxs.entries()) {
+    if ( CN_idx === _.last(CN_idxs)) {
+      CNDelimiters.push([CN_idx, data.length -1]);
+    } else {
+      CNDelimiters.push([CN_idx, CN_idxs[n+1]-1]);
+    }
+  }
+  return CNDelimiters;
 }
 
 function handleMetaData(data, idxs) {
