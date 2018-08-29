@@ -31,7 +31,8 @@ function parseSingleOrder(buffer) {
           let data = sanitize(results);
           const zippedData = tokenizeData(data);
           console.log(colors.blue(zippedData));
-          buildOrder(zippedData);
+          const order = buildOrder(zippedData);
+          dbHandler.insertSingleOrder(order);
         })
         .catch(err => {
           console.log('ERROR PARSER (textualize): '.red, err.message);
@@ -218,35 +219,48 @@ function buildOrder(data) {
     }
     return acc;
   }, {});
-  // console.log(idxs);
 
   // get location, there should be only 1 element in VL array
   const location = _.isEmpty(idxs['VL']) ? "NO LOCATION" : data[idxs['VL'][0]].line;
-  // console.log('location: ', location);
-
   const metaData = handleMetaData(data, idxs);
-  // console.log('metaData: ', metaData);
-
-  const meals = handleMenuItemsAndItemInfo(data, idxs);
-
-
+  const order = handleMenuItemsAndItemInfo(data, idxs);
+  return order;
 }
-function handleMenuItemsAndItemInfo(data, idxs) {
-  const CN_idxs = idxs['CN'] || []; // better to check than to not...
 
+function handleMenuItemsAndItemInfo(data, idxs) {
+  // better to check for undefined than to not...
+  const CN_idxs = idxs['CN'] || []; 
   // sometimes a docket will be void of MI and II => if so then make it 
   // equal to empty array
   const MI_idxs = idxs['MI'] || [];
   const II_idxs = idxs['II'] || [];
 
-  let nonEmptyItemInfos = getNonEmptyItemInfos(data, II_idxs);
-  let CNDelimiters = getAllCNDelimiterPairs(data, CN_idxs);
-  // let CNDelimiters = makeCourseDelimiters(data, CN_idxs);
-  let MIDelimiters = getAllMIDelimiterPairs(data, MI_idxs);
 
 
-  console.log("CNDelimiters: ", CNDelimiters);
-  console.log("MIDelimiters: ", MIDelimiters);
+  const CNDelimiters = getAllCNDelimiterPairs(data, CN_idxs);
+  const MIDelimiters = getAllMIDelimiterPairs(data, MI_idxs);
+  const meals = buildMealItems(data, MIDelimiters, II_idxs);
+  let order = assignMealsToCourses(data, CNDelimiters, meals);
+  // console.log("CNDelimiters: ", CNDelimiters);
+  // console.log("MIDelimiters: ", MIDelimiters);
+  console.log('order:');
+  console.log(JSON.stringify(order,null,2));
+
+  // HANDLE RANDOM CONTENT
+  // is there Random Content?? token is RC.
+  // if so, just add it in
+  if (_.includes(Object.keys(idxs), 'RC') && !_.isEmpty(idxs['RC'])) {
+    console.log(`ATTENTION: order has Random Content at: ${idxs['RC']}`.red);
+    let rc = _.map(idxs['RC'], val => {
+      return data[val].line;
+    });
+    order['RANDOM CONTENT'] = rc.join(', ');
+  }
+  return order;
+}
+
+function buildMealItems(data, MIDelimiters, II_idxs) {
+  const nonEmptyItemInfos = getNonEmptyItemInfos(data, II_idxs);
   // console.log('nonEmptyItemInfos');
   // console.log(JSON.stringify(nonEmptyItemInfos, null,2));
   
@@ -284,9 +298,7 @@ function handleMenuItemsAndItemInfo(data, idxs) {
   }
   // console.log('meals');
   // console.log(JSON.stringify(meals,null,2));
-
-  const order = assignMealsToCourses(data, CNDelimiters, meals);
-  return order;
+  return meals;
 }
 
 function assignMealsToCourses(data, CNDelimiters, meals) {
@@ -324,9 +336,7 @@ function assignMealsToCourses(data, CNDelimiters, meals) {
       } 
     }
   }
-  console.log('order:');
-  console.log(JSON.stringify(order,null,2));
-
+  return order;
 }
 
 function getNonEmptyItemInfos(data, II_idxs) {
