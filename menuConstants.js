@@ -52,6 +52,7 @@ const courseFields = [
   "DESSERT",
   "ADD MODIFIERS",
   "SPECIAL INSTRUCTIONS",
+  "COFFEE TYPES",
 ];
 
 // not exported at this stage.

@@ -60,6 +60,9 @@ function sanitize(results) {
   return data;
 }
 
+
+// -------------- TOKENIZATION OF ORDER ------------- //
+
 function tokenizeData(data) {
   // go thru each line and check through tokens
   const tokenizedData = _.reduce(data, (acc, line, idx) => {
@@ -194,7 +197,8 @@ function tokenII (line) {
 
 function tokenIIS (line) {
   // IIS: "Item Info Separator",
-  // a line that looks like "  --------------", which gets sanitized to '-------------'
+  // a line that looks like "  --------------",
+  // which after data is looks like '-------------'
   return isLineAllDashes(line);
 }
 
@@ -206,6 +210,9 @@ function isLineAllDashes (line) {
     return false;
   }
 }
+
+
+// -------------- BUILDIN OF ORDER ------------- //
 
 function buildOrder(data) {
   // make an object with tokens as keys and locations of said token as values
@@ -222,7 +229,6 @@ function buildOrder(data) {
   const location = _.isEmpty(idxs['VL']) ? "NO LOCATION" : data[idxs['VL'][0]].line;
   const metaData = handleMetaData(data, idxs);
   let meals = handleMenuItemsAndItemInfo(data, idxs);
-
   let order = {};
   order.metaData = metaData;
   order.metaData.location = location;
@@ -253,24 +259,24 @@ function handleMenuItemsAndItemInfo(data, idxs) {
   if (_.includes(Object.keys(idxs), 'RC') && !_.isEmpty(idxs['RC'])) {
     console.log(`ATTENTION: order has Random Content at: ${idxs['RC']}`.red);
     let rc = _.map(idxs['RC'], val => {
-      let _obj = {};
+      let obj = {};
       // assume RC starts and ends on same like ie. it's a one liner
-      _obj.startIdx = val;
-      _obj.endIdx = val;
-      _obj.name = data[val].line;
-      _obj.info = [];
-      _obj.quantity = 1;
-      return _obj;
+      obj.startIdx = val;
+      obj.endIdx = val;
+      obj.name = data[val].line;
+      obj.info = [];
+      obj.quantity = 1;
+      return obj;
     });
     order['RANDOM CONTENT'] = rc;
   }
   order = removeAllIndicesInOrder(order);
+  console.log(JSON.stringify(order,null,2));
   return order;
 }
 
 function removeAllIndicesInOrder(order) {
   let orderClone = _.cloneDeep(order);
-  console.log(JSON.stringify(orderClone,null,2));
   for (let course of Object.keys(orderClone)) {
     let items = orderClone[course]
     for (let item of items) {
@@ -284,7 +290,6 @@ function removeAllIndicesInOrder(order) {
       }
     }
   }
-  console.log(JSON.stringify(orderClone,null,2));
   return orderClone;
 }
 
@@ -300,11 +305,18 @@ function buildMealItems(data, MIDelimiters, II_idxs) {
     const mealStart = MIDelimiter[0];
     const mealEnd = MIDelimiter[1];
     const mealLine = data[mealStart].line;
-    const mealSplit = mealLine.split(/\s+/);
     meal.startIdx = mealStart;
     meal.endIdx = mealEnd;
-    meal.name = mealSplit.slice(1).join(' ');
-    meal.quantity = mealSplit[0];
+    try {
+      const mealSplit = mealLine.split(/\s+/);
+      meal.quantity = isNaN(parseInt(mealSplit[0])) ? '' : parseInt(mealSplit[0]);
+      meal.name = mealSplit.slice(1).join(' ');
+    }
+    catch (e) {
+      console.log(`ERROR: tried to split mealLine and extract fields. ${e.message}`.red);
+      meal.quantity = 0;
+      meal.name = "Parse error";
+    }
     meal.info = [];
 
     if (mealStart === mealEnd) {
@@ -321,7 +333,6 @@ function buildMealItems(data, MIDelimiters, II_idxs) {
         return (item.startIdx > mealStart && item.endIdx < mealEnd);
       });
       meal.info = itemInfos;
-
       meals.push(meal);
     }
   }
@@ -373,28 +384,46 @@ function getNonEmptyItemInfos(data, II_idxs) {
   // TRICKY
   let infos = [];
   for (let [i, II_idx] of II_idxs.entries()) {
+    const aLine = data[II_idx].line;
+    let quantity;
+    let infoLine;
+    try {
+      const splitLine = aLine.split(/\s+/);
+      quantity = isNaN(parseInt(splitLine[0])) ? '' : parseInt(splitLine[0]);
+      infoLine = splitLine.slice(1).join(' ');
+    } catch (e) {
+      console.log(`ERROR: tried to split info line and extract fields. ${e.message}`.red);
+      quantity = 0;
+      infoLine = "Parse error";
+    }
+    let obj = {};
     if (i === 0) {
-      let _obj = {};
-      _obj.itemInfo = [data[II_idx].line];
-      _obj.startIdx = II_idx;
-      infos.push(_obj);
+      // start things off with creating an array containing first line of an info.
+      // plus, if we're at the first element of II_idxs then we cant do what to do in 
+      // the following 'else' block; that is look at the previous element...there is NO
+      // preceding element when we're at the first element.
+      obj.itemInfo = [{quantity:quantity, info:infoLine}];
+      obj.startIdx = II_idx;
+      infos.push(obj);
     } else {
       if ((II_idx - 1) === II_idxs[i-1]) {
         // still part of a previous item info
-        // => append to last element of partitionedII
-        infos[infos.length - 1].itemInfo.push(data[II_idx].line);
+        // => append to last element of infos
+        _.last(infos).itemInfo.push({quantity: quantity, info:infoLine});
       } else {
         // new item info
-        // => push a new array onto partionedII
-        let _obj = {};
-        _obj.itemInfo = [data[II_idx].line];
-        _obj.startIdx = II_idx;
-        infos.push(_obj);
-        infos[infos.length - 2].endIdx = II_idxs[i-1];
+        // => push a new array onto infos
+        obj.itemInfo = [{quantity:quantity, info:infoLine}];
+        obj.startIdx = II_idx;
+        // update the endIdx of the last item info, before pushing new info 
+        // onto infos array
+        infos[infos.length - 1].endIdx = II_idxs[i-1];
+        infos.push(obj);
       }
     }
     if (i === II_idxs.length - 1) {
-        infos[infos.length - 1].endIdx = II_idxs[i];
+      // at last element of II_idxs => last line of last item info
+      infos[infos.length - 1].endIdx = II_idxs[i];
     }
   }
   return infos;
@@ -403,13 +432,13 @@ function getNonEmptyItemInfos(data, II_idxs) {
 function getAllMIDelimiterPairs(data, idxs) {
   let delimiters = [];
   for (let [j, idx] of idxs.entries()) {
-    if ( idx === _.last(idxs)) {
+    if (idx === _.last(idxs)) {
       delimiters.push([idx, data.length -1]);
     } else {
       if (_.includes(mc.courseFields, data[idxs[j+1]-1].line) ) {
         // CARFUL OF COURSE NAMES APPEARING BETWEEN TWO CONSECUTIVE MENU ITEMS
         // have a course name between this menu item and the next
-        // => need to move back 2 steps from  the next menu item location
+        // => need to move back *2* steps from  the next menu item location
         delimiters.push([idx, idxs[j+1] - 2]);
       } else {
         // no course name between this menu item and next one 
@@ -423,7 +452,7 @@ function getAllMIDelimiterPairs(data, idxs) {
 function getAllCNDelimiterPairs(data, idxs) {
   let delimiters = [];
   for (let [j, idx] of idxs.entries()) {
-    if ( idx === _.last(idxs)) {
+    if (idx === _.last(idxs)) {
       delimiters.push([idx, data.length -1]);
     } else {
       delimiters.push([idx, idxs[j+1]-1]);
@@ -435,7 +464,7 @@ function getAllCNDelimiterPairs(data, idxs) {
 function makeCourseDelimiters(data, CN_idxs) {
   let CNDelimiters = [];
   for (let [n, CN_idx] of CN_idxs.entries()) {
-    if ( CN_idx === _.last(CN_idxs)) {
+    if (CN_idx === _.last(CN_idxs)) {
       CNDelimiters.push([CN_idx, data.length -1]);
     } else {
       CNDelimiters.push([CN_idx, CN_idxs[n+1]-1]);
